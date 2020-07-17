@@ -5,9 +5,7 @@
 #include <functions.hpp>
 #include <iostream>
 #include <numeric>
-#include <operator.hpp>
-#include <series.hpp>
-#include <vector>
+#include <dataframe.hpp>
 
 struct test {};
 
