@@ -1,3 +1,4 @@
 set(RUNTIME_TEST
-    "tests.cpp"
+    "storage_test.cpp"
+    "type_to_string_test.cpp"
 )

@@ -35,7 +35,7 @@ template <typename T>[[nodiscard]] inline std::string type_to_string() {
     } else if constexpr (std::is_same_v<type, std::string>) {
         return std::string("std::string");
     } else {
-        return boost::core::demangle(typeid(type{}).name());
+        return boost::core::demangle(typeid(std::declval<T>()).name());
     }
 }
 

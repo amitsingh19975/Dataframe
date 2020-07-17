@@ -2,7 +2,6 @@
 #define AMT_CORE_STORAGE_HPP
 
 #include <core/concepts.hpp>
-// #include <core/logger.hpp>
 #include <boost/mp11/mpl_list.hpp>
 #include <core/type_to_string.hpp>
 #include <core/visit.hpp>
