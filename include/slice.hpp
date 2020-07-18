@@ -2,21 +2,48 @@
 #define AMT_SLICE_HPP
 
 #include <boost/mp11/mpl_tuple.hpp>
-#include <core/type_to_string.hpp>
+#include <core/concepts.hpp>
 #include <cstddef>
 #include <limits>
 
 namespace amt {
 
 struct slice_first {
+    constexpr slice_first() noexcept = default;
+    constexpr slice_first(slice_first const& other) noexcept = default;
+    constexpr slice_first(slice_first && other) noexcept = default;
+    constexpr slice_first& operator=(slice_first const& other) noexcept = default;
+    constexpr slice_first& operator=(slice_first && other) noexcept = default;
+    ~slice_first() = default;
+    constexpr slice_first(std::size_t d) noexcept
+        : data(d)
+    {}
     std::size_t data{0};
 };
 
 struct slice_last {
+    constexpr slice_last() noexcept = default;
+    constexpr slice_last(slice_last const& other) noexcept = default;
+    constexpr slice_last(slice_last && other) noexcept = default;
+    constexpr slice_last& operator=(slice_last const& other) noexcept = default;
+    constexpr slice_last& operator=(slice_last && other) noexcept = default;
+    ~slice_last() = default;
+    constexpr slice_last(std::size_t d) noexcept
+        : data(d)
+    {}
     std::size_t data{std::numeric_limits<std::size_t>::max()};
 };
 
 struct slice_stride {
+    constexpr slice_stride() noexcept = default;
+    constexpr slice_stride(slice_stride const& other) noexcept = default;
+    constexpr slice_stride(slice_stride && other) noexcept = default;
+    constexpr slice_stride& operator=(slice_stride const& other) noexcept = default;
+    constexpr slice_stride& operator=(slice_stride && other) noexcept = default;
+    ~slice_stride() = default;
+    constexpr slice_stride(std::size_t d) noexcept
+        : data(d)
+    {}
     std::size_t data{1};
 };
 

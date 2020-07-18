@@ -179,13 +179,13 @@ template <typename... Ts> struct series {
     inline constexpr void reserve(size_type cap) { m_data.reserve(cap); }
 
     template <typename T> inline void resize(size_type sz, T &&val) {
-        if (!empty() && !m_data[0].empty()) {
+        if (!empty() && !back().empty()) {
             bool flag = false;
 
             if constexpr (std::is_same_v<T, value_type>) {
-                flag = (m_data[0].index() != val.index());
+                flag = (back().index() != val.index());
             } else {
-                flag = (m_data[0].index() != type_index<T>());
+                flag = (back().index() != type_index<T>());
             }
 
             if (flag) {
@@ -233,7 +233,7 @@ template <typename... Ts> struct series {
 
     [[nodiscard]] inline constexpr auto check_types() const noexcept {
         for (auto const &el : *this) {
-            if (m_data[0].index() != el.index()) {
+            if ( ( m_data[0].index() != el.index() ) || el.empty() ) {
                 return false;
             }
         }
@@ -270,6 +270,7 @@ template <typename... Ts> struct series {
 template <typename... Ts> std::string type_to_string(series<Ts...> const &s) {
     return s.empty() ? "Empty" : type_to_string(s[0]);
 }
+
 
 template <typename T>
 [[nodiscard]] inline constexpr bool

@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 #include <core/storage.hpp>
 
-TEST_CASE("Storage Construction", "[Construction]") {
+TEST_CASE("Storage Construction", "[Storage]") {
     amt::storage<> s1;
     REQUIRE(s1.empty());
     REQUIRE(s1.is_string() == false);
@@ -50,7 +50,7 @@ TEST_CASE("Storage Construction", "[Construction]") {
     REQUIRE_THROWS_AS(s4.cast<int>(), std::bad_cast);
 }
 
-TEST_CASE("Storage Copy Construction", "[Copy Construction]") {
+TEST_CASE("Storage Copy Construction", "[Storage]") {
     {
         amt::storage<> s2(10);
         amt::storage<> s1(s2);
@@ -95,7 +95,7 @@ TEST_CASE("Storage Copy Construction", "[Copy Construction]") {
     }
 }
 
-TEST_CASE("Storage Copy Assignment", "[Copy Assignment]") {
+TEST_CASE("Storage Copy Assignment", "[Storage]") {
     amt::storage<> s1;
     REQUIRE(s1.empty());
     REQUIRE(s1.is_string() == false);
@@ -147,7 +147,7 @@ TEST_CASE("Storage Copy Assignment", "[Copy Assignment]") {
     REQUIRE_THROWS_AS(s1.cast<int>(), std::bad_cast);
 }
 
-TEST_CASE("Storage Move Construction", "[Move Construction]") {
+TEST_CASE("Storage Move Construction", "[Storage]") {
     {
         amt::storage<> s2(10);
         amt::storage<> s1( std::move(s2) );
@@ -192,7 +192,7 @@ TEST_CASE("Storage Move Construction", "[Move Construction]") {
     }
 }
 
-TEST_CASE("Storage Move Assignment", "[Move Assignment]") {
+TEST_CASE("Storage Move Assignment", "[Storage]") {
     amt::storage<> s1;
     REQUIRE(s1.empty());
     REQUIRE(s1.is_string() == false);
@@ -245,7 +245,7 @@ TEST_CASE("Storage Move Assignment", "[Move Assignment]") {
 }
 
 
-TEST_CASE("Storage Construction By Value", "[Value Construction]") {
+TEST_CASE("Storage Construction By Value", "[Storage]") {
     {
         amt::storage<> s1(10);
         REQUIRE(s1.empty() == false);
@@ -292,7 +292,7 @@ struct custom_type {
     int v2{};
 };
 
-TEST_CASE("Storage Construction By Custom Type", "[Custom Type Construction]") {
+TEST_CASE("Storage Construction By Custom Type", "[Storage]") {
     amt::storage<custom_type> s1(custom_type{1.f, 100});
     REQUIRE(s1.empty() == false);
     REQUIRE(s1.is_string() == false);
