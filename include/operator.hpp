@@ -396,7 +396,13 @@ inline constexpr std::ostream &operator<<(std::ostream &os, Series auto &&s) {
     std::size_t i{};
     os << "[ ";
     for (auto const &el : s) {
-        (void)(os << el);
+        if (el.is_string()) {
+            os << std::quoted(el.template cast<std::string>());
+        } else if(el.is_char()){
+            os << "'" << el << "'";
+        }else {
+            os << el;
+        }
         if (i++ < s.size() - 1ul) {
             os << ", ";
         }
@@ -874,6 +880,8 @@ inline constexpr std::ostream &operator<<(std::ostream &os, Frame auto &&f) {
         for (auto j = 0ul; j < f.rows(); ++j) {
             if (s[j].is_string()) {
                 os << std::quoted(s[j].template cast<std::string>());
+            } else if(s[j].is_char()){
+                os << "'" << s[j] << "'";
             } else {
                 os << s[j];
             }
