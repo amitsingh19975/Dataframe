@@ -7,12 +7,48 @@
 #include <iomanip>
 #include <ostream>
 
+namespace amt::detail {
+
+template<typename T>
+inline constexpr auto size(T &&v) noexcept {
+    using ret_type = std::decay_t<T>;
+    if constexpr (is_frame_v<ret_type> || is_frame_view_v<T>) {
+        return v.cols();
+    } else {
+        return v.size();
+    }
+}
+
+template<typename T>
+inline constexpr auto cols(T &&v) noexcept {
+    using ret_type = std::decay_t<T>;
+    if constexpr (is_frame_v<ret_type> || is_frame_view_v<T>) {
+        return v.cols();
+    } else {
+        return 1ul;
+    }
+}
+
+template<typename T>
+inline constexpr auto rows(T &&v) noexcept {
+    using ret_type = std::decay_t<T>;
+    if constexpr (is_frame_v<ret_type> || is_frame_view_v<T>) {
+        return v.rows();
+    } else {
+        return v.size();
+    }
+}
+
+} // namespace amt::detail
+
+
 namespace amt::core{
     
     template<typename Container, typename BinaryFn>
     inline constexpr bool equal(Container const& LHS, Container const& RHS, BinaryFn&& fn) noexcept{
+        std::size_t sz = detail::size(LHS);
         #pragma omp parallel for schedule(static)
-        for(auto i = 0ul; i < LHS.size(); ++i){
+        for(auto i = 0ul; i < sz; ++i){
             if( !fn(LHS[i],RHS[i]) ) return false;
         }
         return true;
@@ -612,37 +648,6 @@ inline constexpr std::ostream &operator<<(std::ostream &os, Slice auto &&s) {
 
 // View
 namespace amt {
-
-namespace detail {
-
-inline constexpr auto size(View auto &&v) noexcept {
-    using ret_type = typename std::decay_t<decltype(v)>::view_of;
-    if constexpr (is_frame_v<ret_type>) {
-        return v.cols();
-    } else {
-        return v.size();
-    }
-}
-
-inline constexpr auto cols(View auto &&v) noexcept {
-    using ret_type = typename std::decay_t<decltype(v)>::view_of;
-    if constexpr (is_frame_v<ret_type>) {
-        return v.cols();
-    } else {
-        return 1ul;
-    }
-}
-
-inline constexpr auto rows(View auto &&v) noexcept {
-    using ret_type = typename std::decay_t<decltype(v)>::view_of;
-    if constexpr (is_frame_v<ret_type>) {
-        return v.rows();
-    } else {
-        return v.size();
-    }
-}
-
-} // namespace detail
 
 template <View V>
 requires Series<
