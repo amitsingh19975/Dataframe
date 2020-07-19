@@ -7,6 +7,20 @@
 #include <iomanip>
 #include <ostream>
 
+namespace amt::core{
+    
+    template<typename Container, typename BinaryFn>
+    inline constexpr bool equal(Container const& LHS, Container const& RHS, BinaryFn&& fn) noexcept{
+        #pragma omp parallel for schedule(static)
+        for(auto i = 0ul; i < LHS.size(); ++i){
+            if( !fn(LHS[i],RHS[i]) ) return false;
+        }
+        return true;
+    }
+
+} // namespace amt::core
+
+
 namespace amt {
 
 inline constexpr std::ostream &operator<<(std::ostream &os, Storage auto &&s) {
@@ -398,9 +412,9 @@ inline constexpr std::ostream &operator<<(std::ostream &os, Series auto &&s) {
     for (auto const &el : s) {
         if (el.is_string()) {
             os << std::quoted(el.template cast<std::string>());
-        } else if(el.is_char()){
+        } else if (el.is_char()) {
             os << "'" << el << "'";
-        }else {
+        } else {
             os << el;
         }
         if (i++ < s.size() - 1ul) {
@@ -414,7 +428,9 @@ inline constexpr bool operator==(Series auto &&LHS, Series auto &&RHS) {
     if (LHS.size() != RHS.size()) {
         return false;
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin());
+    return amt::core::equal(LHS, RHS, [](auto const& l, auto const& r){
+        return l == r;
+    });
 }
 
 inline constexpr bool operator!=(Series auto &&LHS, Series auto &&RHS) {
@@ -426,7 +442,7 @@ inline constexpr bool operator<(Series auto &&LHS, Series auto &&RHS) {
         throw std::runtime_error("amt::operator<(Series&&, Series&&) : "
                                  "size mismatch");
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin(), std::less<>{});
+    return amt::core::equal(LHS, RHS, std::less<>{});
 }
 
 inline constexpr bool operator<=(Series auto &&LHS, Series auto &&RHS) {
@@ -434,7 +450,7 @@ inline constexpr bool operator<=(Series auto &&LHS, Series auto &&RHS) {
         throw std::runtime_error("amt::operator<(Series&&, Series&&) : "
                                  "size mismatch");
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin(), std::less_equal<>{});
+    return amt::core::equal(LHS, RHS, std::less_equal<>{});
 }
 
 inline constexpr bool operator>(Series auto &&LHS, Series auto &&RHS) {
@@ -442,7 +458,7 @@ inline constexpr bool operator>(Series auto &&LHS, Series auto &&RHS) {
         throw std::runtime_error("amt::operator<(Series&&, Series&&) : "
                                  "size mismatch");
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin(), std::greater<>{});
+    return amt::core::equal(LHS, RHS, std::greater<>{});
 }
 
 inline constexpr bool operator>=(Series auto &&LHS, Series auto &&RHS) {
@@ -450,7 +466,7 @@ inline constexpr bool operator>=(Series auto &&LHS, Series auto &&RHS) {
         throw std::runtime_error("amt::operator<(Series&&, Series&&) : "
                                  "size mismatch");
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin(),
+    return amt::core::equal(LHS, RHS,
                       std::greater_equal<>{});
 }
 
@@ -672,7 +688,9 @@ inline constexpr bool operator==(View auto &&LHS, View auto &&RHS) {
     if (detail::size(LHS) != detail::size(RHS)) {
         return false;
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin());
+    return amt::core::equal(LHS, RHS, [](auto const& l, auto const& r){
+        return l == r;
+    });
 }
 
 inline constexpr bool operator!=(View auto &&LHS, View auto &&RHS) {
@@ -684,7 +702,7 @@ inline constexpr bool operator<(View auto &&LHS, View auto &&RHS) {
         throw std::runtime_error("amt::operator<(View&&, View&&) : "
                                  "size mismatch");
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin(), std::less<>{});
+    return amt::core::equal(LHS, RHS, std::less<>{});
 }
 
 inline constexpr bool operator<=(View auto &&LHS, View auto &&RHS) {
@@ -692,7 +710,7 @@ inline constexpr bool operator<=(View auto &&LHS, View auto &&RHS) {
         throw std::runtime_error("amt::operator<(View&&, View&&) : "
                                  "size mismatch");
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin(), std::less_equal<>{});
+    return amt::core::equal(LHS, RHS, std::less_equal<>{});
 }
 
 inline constexpr bool operator>(View auto &&LHS, View auto &&RHS) {
@@ -700,7 +718,7 @@ inline constexpr bool operator>(View auto &&LHS, View auto &&RHS) {
         throw std::runtime_error("amt::operator<(View&&, View&&) : "
                                  "size mismatch");
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin(), std::greater<>{});
+    return amt::core::equal(LHS, RHS, std::greater<>{});
 }
 
 inline constexpr bool operator>=(View auto &&LHS, View auto &&RHS) {
@@ -708,7 +726,7 @@ inline constexpr bool operator>=(View auto &&LHS, View auto &&RHS) {
         throw std::runtime_error("amt::operator<(View&&, View&&) : "
                                  "size mismatch");
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin(),
+    return amt::core::equal(LHS, RHS,
                       std::greater_equal<>{});
 }
 
@@ -880,7 +898,7 @@ inline constexpr std::ostream &operator<<(std::ostream &os, Frame auto &&f) {
         for (auto j = 0ul; j < f.rows(); ++j) {
             if (s[j].is_string()) {
                 os << std::quoted(s[j].template cast<std::string>());
-            } else if(s[j].is_char()){
+            } else if (s[j].is_char()) {
                 os << "'" << s[j] << "'";
             } else {
                 os << s[j];
@@ -898,7 +916,9 @@ inline constexpr bool operator==(Frame auto &&LHS, Frame auto &&RHS) {
     if (LHS.cols() != RHS.cols()) {
         return false;
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin());
+    return amt::core::equal(LHS, RHS, [](auto const& l, auto const& r){
+        return l == r;
+    });
 }
 
 inline constexpr bool operator!=(Frame auto &&LHS, Frame auto &&RHS) {
@@ -910,7 +930,7 @@ inline constexpr bool operator<(Frame auto &&LHS, Frame auto &&RHS) {
         throw std::runtime_error("amt::operator<(Frame&&, Frame&&) : "
                                  "size mismatch");
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin(), std::less<>{});
+    return amt::core::equal(LHS, RHS, std::less<>{});
 }
 
 inline constexpr bool operator<=(Frame auto &&LHS, Frame auto &&RHS) {
@@ -918,7 +938,7 @@ inline constexpr bool operator<=(Frame auto &&LHS, Frame auto &&RHS) {
         throw std::runtime_error("amt::operator<(Frame&&, Frame&&) : "
                                  "size mismatch");
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin(), std::less_equal<>{});
+    return amt::core::equal(LHS, RHS, std::less_equal<>{});
 }
 
 inline constexpr bool operator>(Frame auto &&LHS, Frame auto &&RHS) {
@@ -926,7 +946,7 @@ inline constexpr bool operator>(Frame auto &&LHS, Frame auto &&RHS) {
         throw std::runtime_error("amt::operator<(Frame&&, Frame&&) : "
                                  "size mismatch");
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin(), std::greater<>{});
+    return amt::core::equal(LHS, RHS, std::greater<>{});
 }
 
 inline constexpr bool operator>=(Frame auto &&LHS, Frame auto &&RHS) {
@@ -934,7 +954,7 @@ inline constexpr bool operator>=(Frame auto &&LHS, Frame auto &&RHS) {
         throw std::runtime_error("amt::operator<(Frame&&, Frame&&) : "
                                  "size mismatch");
     }
-    return std::equal(LHS.begin(), LHS.end(), RHS.begin(),
+    return amt::core::equal(LHS, RHS,
                       std::greater_equal<>{});
 }
 

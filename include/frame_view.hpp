@@ -54,6 +54,7 @@ template <bool Const, typename... Ts> struct view<frame<Ts...>, Const> {
         if (f.cols() != 0) {
             auto tssl = detail::norm_slice(std::move(ssl), f.rows());
 
+#pragma omp parallel for schedule(static)
             for (auto i = m_fslice.first(); i <= m_fslice.last();
                  i += m_fslice.step()) {
                 m_data.push_back(f[i](tssl));
@@ -91,6 +92,8 @@ template <bool Const, typename... Ts> struct view<frame<Ts...>, Const> {
 
     [[nodiscard]] inline std::vector<std::string> name_to_vector() const {
         std::vector<std::string> temp(cols());
+
+#pragma omp parallel for schedule(static)
         for (auto i = 0ul; i < cols(); ++i) {
             temp[i] = name(i);
         }

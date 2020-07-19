@@ -1,6 +1,7 @@
 #if !defined(AMT_CORE_TYPE_TRAITS_HPP)
 #define AMT_CORE_TYPE_TRAITS_HPP
 
+#include <boost/mp11/algorithm.hpp>
 #include <boost/mp11/mpl_list.hpp>
 #include <cstddef>
 #include <limits>
@@ -143,6 +144,7 @@ struct slice_stride;
 
 struct in_place_t {};
 struct out_place_t {};
+struct packed_storage_t {};
 inline static constexpr auto const in_place = in_place_t{};
 inline static constexpr auto const out_place = out_place_t{};
 
@@ -389,6 +391,20 @@ inline static constexpr bool is_generic_binary_v =
 template <typename Pos0Type, typename L, typename Fn>
 inline static constexpr bool is_generic_binary_at_pos_1_v =
     decltype(is_generic_binary<Pos0Type, L, Fn, 0>())::value;
+
+} // namespace amt::core
+
+namespace amt::core {
+
+template <typename... Ts>
+inline static constexpr bool const
+    is_packed_v = boost::mp11::mp_find<boost::mp11::mp_list<Ts...>,
+                                       packed_storage_t>::value !=
+                  sizeof...(Ts);
+
+template <typename... Ts>
+using normalized_list_t =
+    boost::mp11::mp_remove<boost::mp11::mp_list<Ts...>, packed_storage_t>;
 
 } // namespace amt::core
 

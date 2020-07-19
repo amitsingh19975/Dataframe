@@ -350,7 +350,7 @@ int main(int, char **) {
                            {"Char Label", {'a', 'b', 'c', 'd', 'e'}},
                            {"Alphabet", {"A", "B", "C", "D", "E"}}};
 
-        std::cout << "------------ Operator -------------" << std::endl;
+        std::cout << "------------ Frame View -------------" << std::endl;
         //[ Column: "Number", Type: "std::int32_t" ]{ 1, 2, 3, 4, 5 }
         //[ Column: "Volume", Type: "double" ]{ 1.3, 25.4, 3.12, 423.2, 5.33 }
         //[ Column: "Char Label", Type: "std::int8_t" ]{ 'a', 'b', 'c', 'd', 'e'

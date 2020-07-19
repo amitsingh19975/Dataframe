@@ -48,8 +48,9 @@ template <typename... Ts> struct frame {
     }
 
     frame(std::vector<std::string> v) : m_data(v.size()) {
-        size_type i{};
-        for (; i < v.size(); ++i) {
+
+#pragma omp parallel for schedule(static)
+        for (auto i = 0ul; i < v.size(); ++i) {
             m_name.insert(col_value_type(std::move(v[i]), i));
         }
     }
@@ -66,8 +67,9 @@ template <typename... Ts> struct frame {
 
     frame(std::vector<std::pair<std::string_view, value_type>> v)
         : m_data(v.size()) {
-        size_type i{};
-        for (; i < cols(); ++i) {
+
+#pragma omp parallel for schedule(static)
+        for (auto i = 0ul; i < cols(); ++i) {
             std::string name(std::move(v[i].first));
             m_data[i] = std::move(v[i].second);
             m_name.insert(col_value_type(std::move(name), i));
@@ -79,6 +81,8 @@ template <typename... Ts> struct frame {
               std::move(li)))) {}
 
     frame(FrameView auto &&fv) : frame(fv.rows(), fv.cols()) {
+
+#pragma omp parallel for schedule(static)
         for (auto i = 0ul; i < fv.cols(); ++i) {
             for (auto j = 0ul; j < fv.rows(); ++j) {
                 m_data[i][j] = fv[i][j];

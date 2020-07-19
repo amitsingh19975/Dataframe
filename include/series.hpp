@@ -21,6 +21,8 @@ template <typename... Ts> struct series {
     using reverse_iterator = typename base_type::reverse_iterator;
     using const_reverse_iterator = typename base_type::const_reverse_iterator;
 
+    static constexpr auto const is_packed = value_type::is_packed;
+
     constexpr series() = default;
     constexpr series(series const &other) : m_data(other.m_data) {}
     constexpr series(series &&other) noexcept
@@ -39,6 +41,7 @@ template <typename... Ts> struct series {
     template <View V>
     requires Series<typename V::view_of> constexpr series(V v)
         : m_data(v.size()) {
+#pragma omp parallel for schedule(static)
         for (auto i = 0ul; i < v.size(); ++i) {
             m_data[i] = v[i];
         }
@@ -50,20 +53,32 @@ template <typename... Ts> struct series {
 
     template <typename T>
     constexpr series(std::vector<T> v) : m_data(v.size()) {
-        size_type i{};
-        for (auto &el : v) {
-            m_data[i] = std::move(el);
 
-            if (m_data[0].index() != m_data[i].index()) {
+        bool flag = false;
+
+#pragma omp parallel for schedule(static)
+        for (auto i = 0ul; i < v.size(); ++i) {
+            m_data[i] = std::move(v[i]);
+            if constexpr (std::is_same_v<T, value_type>) {
+                flag |= (m_data[0].index() != m_data[i].index());
+            }
+        }
+
+        if constexpr (std::is_same_v<T, value_type>) {
+            if (flag) {
                 throw std::runtime_error(
                     "amt::series(std::vector<T>) : "
                     "all the elements in the series should have same type");
             }
-            ++i;
         }
     }
 
-    template <typename T> inline constexpr void push_back(T &&val) {
+    template <typename T, typename... Args>
+    inline void emplace_back(Args &&... args) {
+        push_back(std::move(T(std::forward<Args>(args)...)));
+    }
+
+    template <typename T> inline void push_back(T &&val) {
         m_data.push_back(std::move(val));
 
         if (m_data[0].index() != back().index()) {
@@ -71,11 +86,6 @@ template <typename... Ts> struct series {
                 "amt::series::push_back(T&&) : "
                 "all the elements in the series should have same type");
         }
-    }
-
-    template <typename T, typename... Args>
-    inline void emplace_back(Args &&... args) {
-        push_back(std::move(T(std::forward<Args>(args)...)));
     }
 
     [[nodiscard]] inline constexpr size_type size() const noexcept {
@@ -233,7 +243,7 @@ template <typename... Ts> struct series {
 
     [[nodiscard]] inline constexpr auto check_types() const noexcept {
         for (auto const &el : *this) {
-            if ( ( m_data[0].index() != el.index() ) || el.empty() ) {
+            if ((m_data[0].index() != el.index()) || el.empty()) {
                 return false;
             }
         }
@@ -270,7 +280,6 @@ template <typename... Ts> struct series {
 template <typename... Ts> std::string type_to_string(series<Ts...> const &s) {
     return s.empty() ? "Empty" : type_to_string(s[0]);
 }
-
 
 template <typename T>
 [[nodiscard]] inline constexpr bool
