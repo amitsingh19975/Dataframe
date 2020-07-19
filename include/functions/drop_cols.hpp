@@ -19,7 +19,7 @@ struct drop_cols_fn {
 
         std::erase_if(cids, [max = cols](auto i) { return i >= max; });
 
-        out.resize(rows, cols - cids.size());
+        out.resize(cols - cids.size(), rows);
 
         std::size_t k{};
         for (auto i = 0ul; i < cols; ++i) {

@@ -60,7 +60,7 @@ struct drop_rows_fn {
         auto cols = in.cols();
         auto rows = in.rows();
 
-        out.resize(rows - rids.size(), cols);
+        out.resize(cols,rows - rids.size());
 
 #pragma omp parallel for schedule(static)
         for (auto i = 0ul; i < cols; ++i) {

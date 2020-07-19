@@ -44,8 +44,9 @@ inline constexpr auto rows(T &&v) noexcept {
 
 namespace amt::core{
     
-    template<typename Container, typename BinaryFn>
-    inline constexpr bool equal(Container const& LHS, Container const& RHS, BinaryFn&& fn) noexcept{
+    template<typename Container1, typename Container2, typename BinaryFn>
+    requires (FrameViewOrFrame<Container1> || SeriesViewOrSeries<Container2>)
+    inline constexpr bool equal(Container1 const& LHS, Container2 const& RHS, BinaryFn&& fn) noexcept{
         std::size_t sz = detail::size(LHS);
         #pragma omp parallel for schedule(static)
         for(auto i = 0ul; i < sz; ++i){
@@ -437,10 +438,10 @@ inline constexpr auto &operator*=(Storage auto &LHS, Storage auto &&RHS) {
 
 } // namespace amt
 
-// Series operators
+// SeriesViewOrSeries operators
 namespace amt {
 
-inline constexpr std::ostream &operator<<(std::ostream &os, Series auto &&s) {
+inline constexpr std::ostream &operator<<(std::ostream &os, SeriesViewOrSeries auto &&s) {
     if (s.empty())
         return os << "[]";
     std::size_t i{};
@@ -460,58 +461,58 @@ inline constexpr std::ostream &operator<<(std::ostream &os, Series auto &&s) {
     return os << " ]";
 }
 
-inline constexpr bool operator==(Series auto &&LHS, Series auto &&RHS) {
+inline constexpr bool operator==(SeriesViewOrSeries auto &&LHS, SeriesViewOrSeries auto &&RHS) {
     if (LHS.size() != RHS.size()) {
         return false;
     }
-    return amt::core::equal(LHS, RHS, [](auto const& l, auto const& r){
+    return core::equal(LHS, RHS, [](auto const& l, auto const& r){
         return l == r;
     });
 }
 
-inline constexpr bool operator!=(Series auto &&LHS, Series auto &&RHS) {
+inline constexpr bool operator!=(SeriesViewOrSeries auto &&LHS, SeriesViewOrSeries auto &&RHS) {
     return !(LHS == RHS);
 }
 
-inline constexpr bool operator<(Series auto &&LHS, Series auto &&RHS) {
+inline constexpr bool operator<(SeriesViewOrSeries auto &&LHS, SeriesViewOrSeries auto &&RHS) {
     if (LHS.size() != RHS.size()) {
-        throw std::runtime_error("amt::operator<(Series&&, Series&&) : "
+        throw std::runtime_error("amt::operator<(SeriesViewOrSeries&&, SeriesViewOrSeries&&) : "
                                  "size mismatch");
     }
-    return amt::core::equal(LHS, RHS, std::less<>{});
+    return core::equal(LHS, RHS, std::less<>{});
 }
 
-inline constexpr bool operator<=(Series auto &&LHS, Series auto &&RHS) {
+inline constexpr bool operator<=(SeriesViewOrSeries auto &&LHS, SeriesViewOrSeries auto &&RHS) {
     if (LHS.size() != RHS.size()) {
-        throw std::runtime_error("amt::operator<(Series&&, Series&&) : "
+        throw std::runtime_error("amt::operator<(SeriesViewOrSeries&&, SeriesViewOrSeries&&) : "
                                  "size mismatch");
     }
-    return amt::core::equal(LHS, RHS, std::less_equal<>{});
+    return core::equal(LHS, RHS, std::less_equal<>{});
 }
 
-inline constexpr bool operator>(Series auto &&LHS, Series auto &&RHS) {
+inline constexpr bool operator>(SeriesViewOrSeries auto &&LHS, SeriesViewOrSeries auto &&RHS) {
     if (LHS.size() != RHS.size()) {
-        throw std::runtime_error("amt::operator<(Series&&, Series&&) : "
+        throw std::runtime_error("amt::operator<(SeriesViewOrSeries&&, SeriesViewOrSeries&&) : "
                                  "size mismatch");
     }
-    return amt::core::equal(LHS, RHS, std::greater<>{});
+    return core::equal(LHS, RHS, std::greater<>{});
 }
 
-inline constexpr bool operator>=(Series auto &&LHS, Series auto &&RHS) {
+inline constexpr bool operator>=(SeriesViewOrSeries auto &&LHS, SeriesViewOrSeries auto &&RHS) {
     if (LHS.size() != RHS.size()) {
-        throw std::runtime_error("amt::operator<(Series&&, Series&&) : "
+        throw std::runtime_error("amt::operator<(SeriesViewOrSeries&&, SeriesViewOrSeries&&) : "
                                  "size mismatch");
     }
-    return amt::core::equal(LHS, RHS,
+    return core::equal(LHS, RHS,
                       std::greater_equal<>{});
 }
 
-inline auto operator+(Series auto &&LHS, Series auto &&RHS) {
+inline auto operator+(SeriesViewOrSeries auto &&LHS, SeriesViewOrSeries auto &&RHS) {
     if (LHS.size() != RHS.size()) {
-        throw std::runtime_error("amt::operator+(Series&&, Series&&) : "
+        throw std::runtime_error("amt::operator+(SeriesViewOrSeries&&, SeriesViewOrSeries&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
     ret_type temp(LHS.size());
@@ -523,12 +524,12 @@ inline auto operator+(Series auto &&LHS, Series auto &&RHS) {
     return temp;
 }
 
-inline auto operator-(Series auto &&LHS, Series auto &&RHS) {
+inline auto operator-(SeriesViewOrSeries auto &&LHS, SeriesViewOrSeries auto &&RHS) {
     if (LHS.size() != RHS.size()) {
-        throw std::runtime_error("amt::operator-(Series&&, Series&&) : "
+        throw std::runtime_error("amt::operator-(SeriesViewOrSeries&&, SeriesViewOrSeries&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
     ret_type temp(LHS.size());
@@ -540,12 +541,12 @@ inline auto operator-(Series auto &&LHS, Series auto &&RHS) {
     return temp;
 }
 
-inline auto operator*(Series auto &&LHS, Series auto &&RHS) {
+inline auto operator*(SeriesViewOrSeries auto &&LHS, SeriesViewOrSeries auto &&RHS) {
     if (LHS.size() != RHS.size()) {
-        throw std::runtime_error("amt::operator*(Series&&, Series&&) : "
+        throw std::runtime_error("amt::operator*(SeriesViewOrSeries&&, SeriesViewOrSeries&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
     ret_type temp(LHS.size());
@@ -557,12 +558,12 @@ inline auto operator*(Series auto &&LHS, Series auto &&RHS) {
     return temp;
 }
 
-inline auto operator/(Series auto &&LHS, Series auto &&RHS) {
+inline auto operator/(SeriesViewOrSeries auto &&LHS, SeriesViewOrSeries auto &&RHS) {
     if (LHS.size() != RHS.size()) {
-        throw std::runtime_error("amt::operator/(Series&&, Series&&) : "
+        throw std::runtime_error("amt::operator/(SeriesViewOrSeries&&, SeriesViewOrSeries&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
     ret_type temp(LHS.size());
@@ -574,12 +575,12 @@ inline auto operator/(Series auto &&LHS, Series auto &&RHS) {
     return temp;
 }
 
-inline auto &operator+=(Series auto &LHS, Series auto &&RHS) {
+inline auto &operator+=(SeriesViewOrSeries auto &LHS, SeriesViewOrSeries auto &&RHS) {
     if (LHS.size() != RHS.size()) {
-        throw std::runtime_error("amt::operator+=(Series&&, Series&&) : "
+        throw std::runtime_error("amt::operator+=(SeriesViewOrSeries&&, SeriesViewOrSeries&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
 #pragma omp parallel for schedule(static)
@@ -589,12 +590,12 @@ inline auto &operator+=(Series auto &LHS, Series auto &&RHS) {
     return LHS;
 }
 
-inline auto &operator-=(Series auto &LHS, Series auto &&RHS) {
+inline auto &operator-=(SeriesViewOrSeries auto &LHS, SeriesViewOrSeries auto &&RHS) {
     if (LHS.size() != RHS.size()) {
-        throw std::runtime_error("amt::operator-=(Series&&, Series&&) : "
+        throw std::runtime_error("amt::operator-=(SeriesViewOrSeries&&, SeriesViewOrSeries&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
 #pragma omp parallel for schedule(static)
@@ -604,12 +605,12 @@ inline auto &operator-=(Series auto &LHS, Series auto &&RHS) {
     return LHS;
 }
 
-inline auto &operator*=(Series auto &LHS, Series auto &&RHS) {
+inline auto &operator*=(SeriesViewOrSeries auto &LHS, SeriesViewOrSeries auto &&RHS) {
     if (LHS.size() != RHS.size()) {
-        throw std::runtime_error("amt::operator*=(Series&&, Series&&) : "
+        throw std::runtime_error("amt::operator*=(SeriesViewOrSeries&&, SeriesViewOrSeries&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
 #pragma omp parallel for schedule(static)
@@ -619,12 +620,12 @@ inline auto &operator*=(Series auto &LHS, Series auto &&RHS) {
     return LHS;
 }
 
-inline auto &operator/=(Series auto &LHS, Series auto &&RHS) {
+inline auto &operator/=(SeriesViewOrSeries auto &LHS, SeriesViewOrSeries auto &&RHS) {
     if (LHS.size() != RHS.size()) {
-        throw std::runtime_error("amt::operator/=(Series&&, Series&&) : "
+        throw std::runtime_error("amt::operator/=(SeriesViewOrSeries&&, SeriesViewOrSeries&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
 #pragma omp parallel for schedule(static)
@@ -646,252 +647,9 @@ inline constexpr std::ostream &operator<<(std::ostream &os, Slice auto &&s) {
 
 } // namespace amt
 
-// View
 namespace amt {
 
-template <View V>
-requires Series<
-    typename std::decay_t<V>::view_of> inline constexpr std::ostream &
-operator<<(std::ostream &os, V &&s) {
-    os << "[ ";
-    std::size_t i{};
-    for (auto const &el : s) {
-        os << el;
-        if (i < s.size() - 1) {
-            os << ", ";
-        }
-        ++i;
-    }
-    return os << " ]";
-}
-
-template <View V>
-requires Frame<
-    typename std::decay_t<V>::view_of> inline constexpr std::ostream &
-operator<<(std::ostream &os, V &&f) {
-    std::size_t i{};
-    for (auto const &s : f) {
-        os << "[ Column: ";
-        os << std::quoted(f.name(i++))
-           << ", Type: " << std::quoted(type_to_string(s)) << " ]{ ";
-        for (auto j = 0ul; j < f.rows(); ++j) {
-            if (s[j].is_string()) {
-                os << std::quoted(s[j].template cast<std::string>());
-            } else {
-                os << s[j];
-            }
-            if (j < f.rows() - 1ul) {
-                os << ", ";
-            }
-        }
-        os << " }\n";
-    }
-    return os;
-}
-
-inline constexpr bool operator==(View auto &&LHS, View auto &&RHS) {
-    if (detail::size(LHS) != detail::size(RHS)) {
-        return false;
-    }
-    return amt::core::equal(LHS, RHS, [](auto const& l, auto const& r){
-        return l == r;
-    });
-}
-
-inline constexpr bool operator!=(View auto &&LHS, View auto &&RHS) {
-    return !(LHS == RHS);
-}
-
-inline constexpr bool operator<(View auto &&LHS, View auto &&RHS) {
-    if (detail::size(LHS) != detail::size(RHS)) {
-        throw std::runtime_error("amt::operator<(View&&, View&&) : "
-                                 "size mismatch");
-    }
-    return amt::core::equal(LHS, RHS, std::less<>{});
-}
-
-inline constexpr bool operator<=(View auto &&LHS, View auto &&RHS) {
-    if (detail::size(LHS) != detail::size(RHS)) {
-        throw std::runtime_error("amt::operator<(View&&, View&&) : "
-                                 "size mismatch");
-    }
-    return amt::core::equal(LHS, RHS, std::less_equal<>{});
-}
-
-inline constexpr bool operator>(View auto &&LHS, View auto &&RHS) {
-    if (detail::size(LHS) != detail::size(RHS)) {
-        throw std::runtime_error("amt::operator<(View&&, View&&) : "
-                                 "size mismatch");
-    }
-    return amt::core::equal(LHS, RHS, std::greater<>{});
-}
-
-inline constexpr bool operator>=(View auto &&LHS, View auto &&RHS) {
-    if (detail::size(LHS) != detail::size(RHS)) {
-        throw std::runtime_error("amt::operator<(View&&, View&&) : "
-                                 "size mismatch");
-    }
-    return amt::core::equal(LHS, RHS,
-                      std::greater_equal<>{});
-}
-
-inline auto operator+(View auto &&LHS, View auto &&RHS) {
-    using ret_type = typename std::decay_t<decltype(LHS)>::view_of;
-    using size_type = typename ret_type::size_type;
-
-    size_type sz = detail::size(LHS);
-    if (detail::size(LHS) != detail::size(RHS)) {
-        throw std::runtime_error("amt::operator+(View&&, View&&) : "
-                                 "size mismatch");
-    }
-
-    ret_type temp(sz);
-
-#pragma omp parallel for schedule(static)
-    for (auto i = size_type{}; i < sz; ++i) {
-        temp[i] = LHS[i] + RHS[i];
-    }
-    return temp;
-}
-
-inline auto operator-(View auto &&LHS, View auto &&RHS) {
-    using ret_type = typename std::decay_t<decltype(LHS)>::view_of;
-    using size_type = typename ret_type::size_type;
-
-    size_type sz = detail::size(LHS);
-    if (detail::size(LHS) != detail::size(RHS)) {
-        throw std::runtime_error("amt::operator-(View&&, View&&) : "
-                                 "size mismatch");
-    }
-
-    ret_type temp(sz);
-
-#pragma omp parallel for schedule(static)
-    for (auto i = size_type{}; i < sz; ++i) {
-        temp[i] = LHS[i] - RHS[i];
-    }
-    return temp;
-}
-
-inline auto operator*(View auto &&LHS, View auto &&RHS) {
-    using ret_type = typename std::decay_t<decltype(LHS)>::view_of;
-    using size_type = typename ret_type::size_type;
-
-    size_type sz = detail::size(LHS);
-    if (detail::size(LHS) != detail::size(RHS)) {
-        throw std::runtime_error("amt::operator*(View&&, View&&) : "
-                                 "size mismatch");
-    }
-
-    ret_type temp(sz);
-
-#pragma omp parallel for schedule(static)
-    for (auto i = size_type{}; i < sz; ++i) {
-        temp[i] = LHS[i] * RHS[i];
-    }
-    return temp;
-}
-
-inline auto operator/(View auto &&LHS, View auto &&RHS) {
-    using ret_type = typename std::decay_t<decltype(LHS)>::view_of;
-    using size_type = typename ret_type::size_type;
-
-    size_type sz = detail::size(LHS);
-    if (detail::size(LHS) != detail::size(RHS)) {
-        throw std::runtime_error("amt::operator/(View&&, View&&) : "
-                                 "size mismatch");
-    }
-
-    ret_type temp(sz);
-
-#pragma omp parallel for schedule(static)
-    for (auto i = size_type{}; i < sz; ++i) {
-        temp[i] = LHS[i] / RHS[i];
-    }
-    return temp;
-}
-
-template <View VLHS>
-requires(VLHS::is_const == false) inline auto &operator+=(VLHS &LHS,
-                                                          View auto &&RHS) {
-    using ret_type = typename std::decay_t<decltype(LHS)>::view_of;
-    using size_type = typename ret_type::size_type;
-
-    size_type sz = detail::size(LHS);
-    if (detail::size(LHS) != detail::size(RHS)) {
-        throw std::runtime_error("amt::operator+=(View&&, View&&) : "
-                                 "size mismatch");
-    }
-
-#pragma omp parallel for schedule(static)
-    for (auto i = size_type{}; i < sz; ++i) {
-        LHS[i] += RHS[i];
-    }
-    return LHS;
-}
-
-template <View VLHS>
-requires(VLHS::is_const == false) inline auto &operator-=(VLHS &LHS,
-                                                          View auto &&RHS) {
-    using ret_type = typename std::decay_t<decltype(LHS)>::view_of;
-    using size_type = typename ret_type::size_type;
-
-    size_type sz = detail::size(LHS);
-    if (detail::size(LHS) != detail::size(RHS)) {
-        throw std::runtime_error("amt::operator-=(View&&, View&&) : "
-                                 "size mismatch");
-    }
-
-#pragma omp parallel for schedule(static)
-    for (auto i = size_type{}; i < sz; ++i) {
-        LHS[i] -= RHS[i];
-    }
-    return LHS;
-}
-
-template <View VLHS>
-requires(VLHS::is_const == false) inline auto &operator*=(VLHS &LHS,
-                                                          View auto &&RHS) {
-    using ret_type = typename std::decay_t<decltype(LHS)>::view_of;
-    using size_type = typename ret_type::size_type;
-
-    size_type sz = detail::size(LHS);
-    if (detail::size(LHS) != detail::size(RHS)) {
-        throw std::runtime_error("amt::operator*=(View&&, View&&) : "
-                                 "size mismatch");
-    }
-
-#pragma omp parallel for schedule(static)
-    for (auto i = size_type{}; i < sz; ++i) {
-        LHS[i] *= RHS[i];
-    }
-    return LHS;
-}
-
-template <View VLHS>
-requires(VLHS::is_const == false) inline auto &operator/=(VLHS &LHS,
-                                                          View auto &&RHS) {
-    using ret_type = typename std::decay_t<decltype(LHS)>::view_of;
-    using size_type = typename ret_type::size_type;
-
-    size_type sz = detail::size(LHS);
-    if (detail::size(LHS) != detail::size(RHS)) {
-        throw std::runtime_error("amt::operator/=(View&&, View&&) : "
-                                 "size mismatch");
-    }
-
-#pragma omp parallel for schedule(static)
-    for (auto i = size_type{}; i < sz; ++i) {
-        LHS[i] /= RHS[i];
-    }
-    return LHS;
-}
-
-} // namespace amt
-
-namespace amt {
-
-inline constexpr std::ostream &operator<<(std::ostream &os, Frame auto &&f) {
+inline constexpr std::ostream &operator<<(std::ostream &os, FrameViewOrFrame auto &&f) {
     if (f.empty())
         return os << "[ Column: Empty, Type: Empty ]{}";
 
@@ -917,58 +675,58 @@ inline constexpr std::ostream &operator<<(std::ostream &os, Frame auto &&f) {
     return os;
 }
 
-inline constexpr bool operator==(Frame auto &&LHS, Frame auto &&RHS) {
+inline constexpr bool operator==(FrameViewOrFrame auto &&LHS, FrameViewOrFrame auto &&RHS) {
     if (LHS.cols() != RHS.cols()) {
         return false;
     }
-    return amt::core::equal(LHS, RHS, [](auto const& l, auto const& r){
+    return core::equal(LHS, RHS, [](auto const& l, auto const& r){
         return l == r;
     });
 }
 
-inline constexpr bool operator!=(Frame auto &&LHS, Frame auto &&RHS) {
+inline constexpr bool operator!=(FrameViewOrFrame auto &&LHS, FrameViewOrFrame auto &&RHS) {
     return !(LHS == RHS);
 }
 
-inline constexpr bool operator<(Frame auto &&LHS, Frame auto &&RHS) {
+inline constexpr bool operator<(FrameViewOrFrame auto &&LHS, FrameViewOrFrame auto &&RHS) {
     if (LHS.cols() != RHS.cols()) {
-        throw std::runtime_error("amt::operator<(Frame&&, Frame&&) : "
+        throw std::runtime_error("amt::operator<(FrameViewOrFrame&&, FrameViewOrFrame&&) : "
                                  "size mismatch");
     }
-    return amt::core::equal(LHS, RHS, std::less<>{});
+    return core::equal(LHS, RHS, std::less<>{});
 }
 
-inline constexpr bool operator<=(Frame auto &&LHS, Frame auto &&RHS) {
+inline constexpr bool operator<=(FrameViewOrFrame auto &&LHS, FrameViewOrFrame auto &&RHS) {
     if (LHS.cols() != RHS.cols()) {
-        throw std::runtime_error("amt::operator<(Frame&&, Frame&&) : "
+        throw std::runtime_error("amt::operator<(FrameViewOrFrame&&, FrameViewOrFrame&&) : "
                                  "size mismatch");
     }
-    return amt::core::equal(LHS, RHS, std::less_equal<>{});
+    return core::equal(LHS, RHS, std::less_equal<>{});
 }
 
-inline constexpr bool operator>(Frame auto &&LHS, Frame auto &&RHS) {
+inline constexpr bool operator>(FrameViewOrFrame auto &&LHS, FrameViewOrFrame auto &&RHS) {
     if (LHS.cols() != RHS.cols()) {
-        throw std::runtime_error("amt::operator<(Frame&&, Frame&&) : "
+        throw std::runtime_error("amt::operator<(FrameViewOrFrame&&, FrameViewOrFrame&&) : "
                                  "size mismatch");
     }
-    return amt::core::equal(LHS, RHS, std::greater<>{});
+    return core::equal(LHS, RHS, std::greater<>{});
 }
 
-inline constexpr bool operator>=(Frame auto &&LHS, Frame auto &&RHS) {
+inline constexpr bool operator>=(FrameViewOrFrame auto &&LHS, FrameViewOrFrame auto &&RHS) {
     if (LHS.cols() != RHS.cols()) {
-        throw std::runtime_error("amt::operator<(Frame&&, Frame&&) : "
+        throw std::runtime_error("amt::operator<(FrameViewOrFrame&&, FrameViewOrFrame&&) : "
                                  "size mismatch");
     }
-    return amt::core::equal(LHS, RHS,
+    return core::equal(LHS, RHS,
                       std::greater_equal<>{});
 }
 
-inline auto operator+(Frame auto &&LHS, Frame auto &&RHS) {
+inline auto operator+(FrameViewOrFrame auto &&LHS, FrameViewOrFrame auto &&RHS) {
     if (LHS.cols() != RHS.cols()) {
-        throw std::runtime_error("amt::operator+(Frame&&, Frame&&) : "
+        throw std::runtime_error("amt::operator+(FrameViewOrFrame&&, FrameViewOrFrame&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
     ret_type temp(LHS.cols());
@@ -980,12 +738,12 @@ inline auto operator+(Frame auto &&LHS, Frame auto &&RHS) {
     return temp;
 }
 
-inline auto operator-(Frame auto &&LHS, Frame auto &&RHS) {
+inline auto operator-(FrameViewOrFrame auto &&LHS, FrameViewOrFrame auto &&RHS) {
     if (LHS.cols() != RHS.cols()) {
-        throw std::runtime_error("amt::operator-(Frame&&, Frame&&) : "
+        throw std::runtime_error("amt::operator-(FrameViewOrFrame&&, FrameViewOrFrame&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
     ret_type temp(LHS.cols());
@@ -997,12 +755,12 @@ inline auto operator-(Frame auto &&LHS, Frame auto &&RHS) {
     return temp;
 }
 
-inline auto operator*(Frame auto &&LHS, Frame auto &&RHS) {
+inline auto operator*(FrameViewOrFrame auto &&LHS, FrameViewOrFrame auto &&RHS) {
     if (LHS.cols() != RHS.cols()) {
-        throw std::runtime_error("amt::operator*(Frame&&, Frame&&) : "
+        throw std::runtime_error("amt::operator*(FrameViewOrFrame&&, FrameViewOrFrame&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
     ret_type temp(LHS.cols());
@@ -1014,12 +772,12 @@ inline auto operator*(Frame auto &&LHS, Frame auto &&RHS) {
     return temp;
 }
 
-inline auto operator/(Frame auto &&LHS, Frame auto &&RHS) {
+inline auto operator/(FrameViewOrFrame auto &&LHS, FrameViewOrFrame auto &&RHS) {
     if (LHS.cols() != RHS.cols()) {
-        throw std::runtime_error("amt::operator/(Frame&&, Frame&&) : "
+        throw std::runtime_error("amt::operator/(FrameViewOrFrame&&, FrameViewOrFrame&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
     ret_type temp(LHS.cols());
@@ -1031,12 +789,12 @@ inline auto operator/(Frame auto &&LHS, Frame auto &&RHS) {
     return temp;
 }
 
-inline auto &operator+=(Frame auto &LHS, Frame auto &&RHS) {
+inline auto &operator+=(FrameViewOrFrame auto &LHS, FrameViewOrFrame auto &&RHS) {
     if (LHS.cols() != RHS.cols()) {
-        throw std::runtime_error("amt::operator+=(Frame&&, Frame&&) : "
+        throw std::runtime_error("amt::operator+=(FrameViewOrFrame&&, FrameViewOrFrame&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
 #pragma omp parallel for schedule(static)
@@ -1046,12 +804,12 @@ inline auto &operator+=(Frame auto &LHS, Frame auto &&RHS) {
     return LHS;
 }
 
-inline auto &operator-=(Frame auto &LHS, Frame auto &&RHS) {
+inline auto &operator-=(FrameViewOrFrame auto &LHS, FrameViewOrFrame auto &&RHS) {
     if (LHS.cols() != RHS.cols()) {
-        throw std::runtime_error("amt::operator-=(Frame&&, Frame&&) : "
+        throw std::runtime_error("amt::operator-=(FrameViewOrFrame&&, FrameViewOrFrame&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
 #pragma omp parallel for schedule(static)
@@ -1061,12 +819,12 @@ inline auto &operator-=(Frame auto &LHS, Frame auto &&RHS) {
     return LHS;
 }
 
-inline auto &operator*=(Frame auto &LHS, Frame auto &&RHS) {
+inline auto &operator*=(FrameViewOrFrame auto &LHS, FrameViewOrFrame auto &&RHS) {
     if (LHS.cols() != RHS.cols()) {
-        throw std::runtime_error("amt::operator*=(Frame&&, Frame&&) : "
+        throw std::runtime_error("amt::operator*=(FrameViewOrFrame&&, FrameViewOrFrame&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
 #pragma omp parallel for schedule(static)
@@ -1076,12 +834,12 @@ inline auto &operator*=(Frame auto &LHS, Frame auto &&RHS) {
     return LHS;
 }
 
-inline auto &operator/=(Frame auto &LHS, Frame auto &&RHS) {
+inline auto &operator/=(FrameViewOrFrame auto &LHS, FrameViewOrFrame auto &&RHS) {
     if (LHS.cols() != RHS.cols()) {
-        throw std::runtime_error("amt::operator/=(Frame&&, Frame&&) : "
+        throw std::runtime_error("amt::operator/=(FrameViewOrFrame&&, FrameViewOrFrame&&) : "
                                  "size mismatch");
     }
-    using ret_type = std::decay_t<decltype(LHS)>;
+    using ret_type = result_type_t<decltype(LHS)>;
     using size_type = typename ret_type::size_type;
 
 #pragma omp parallel for schedule(static)

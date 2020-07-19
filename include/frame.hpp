@@ -20,8 +20,8 @@ template <typename... Ts> struct frame {
     using reverse_iterator = typename base_type::reverse_iterator;
     using const_reverse_iterator = typename base_type::const_reverse_iterator;
     using col_base_type =
-        boost::bimaps::bimap<boost::bimaps::unordered_set_of<std::string>,
-                             boost::bimaps::unordered_set_of<size_type>>;
+        boost::bimaps::bimap<boost::bimaps::set_of<std::string>,
+                             boost::bimaps::set_of<size_type>>;
     using col_value_type = typename col_base_type::value_type;
 
     constexpr frame() noexcept = default;
@@ -36,7 +36,7 @@ template <typename... Ts> struct frame {
 
     ~frame() = default;
 
-    constexpr frame(size_type row, size_type col)
+    constexpr frame(size_type col, size_type row)
         : m_data(col, value_type(row)) {
         generate_name(0ul);
     }
@@ -60,6 +60,15 @@ template <typename... Ts> struct frame {
 
     frame(std::vector<value_type> v) : m_data(std::move(v)) {
         generate_name(0ul);
+#pragma omp parallel for schedule(static)
+        for (auto i = 0ul; i < cols(); ++i) {
+            if (m_data[i].size() != rows()) {
+                throw std::runtime_error(
+                    "amt::frame(std::vector<std::pair<std::string_view, "
+                    "value_type>>) : "
+                    "all the cols should have same number of rows");
+            }
+        }
     }
 
     frame(std::initializer_list<value_type> li)
@@ -68,11 +77,25 @@ template <typename... Ts> struct frame {
     frame(std::vector<std::pair<std::string_view, value_type>> v)
         : m_data(v.size()) {
 
+        if (v.size() != 0) {
+            bool flag = false;
+            size_type sz = v[0].second.size();
+
 #pragma omp parallel for schedule(static)
-        for (auto i = 0ul; i < cols(); ++i) {
-            std::string name(std::move(v[i].first));
-            m_data[i] = std::move(v[i].second);
-            m_name.insert(col_value_type(std::move(name), i));
+            for (auto i = 0ul; i < cols(); ++i) {
+                std::string name(std::move(v[i].first));
+
+                flag |= (sz != v[i].second.size());
+
+                m_data[i] = std::move(v[i].second);
+                m_name.insert(col_value_type(std::move(name), i));
+            }
+            if (flag) {
+                throw std::runtime_error(
+                    "amt::frame(std::vector<std::pair<std::string_view, "
+                    "value_type>>) : "
+                    "all the cols should have same number of rows");
+            }
         }
     }
 
@@ -116,9 +139,9 @@ template <typename... Ts> struct frame {
         return m_data.at(index(k));
     }
 
-    constexpr auto &at(size_type r, size_type c) { return m_data.at(c).at(r); }
+    constexpr auto &at(size_type c, size_type r) { return m_data.at(c).at(r); }
 
-    constexpr auto const &at(size_type r, size_type c) const {
+    constexpr auto const &at(size_type c, size_type r) const {
         return m_data.at(c).at(r);
     }
 
@@ -202,14 +225,14 @@ template <typename... Ts> struct frame {
         return false;
     }
 
-    inline bool replace(std::string_view name, size_type nidx) {
-        auto &temp = m_name.left;
-        if (auto it = temp.find(name.data()); it != temp.end()) {
-            temp.replace_data(it, nidx);
-            return true;
-        }
-        return false;
-    }
+    // inline bool replace(std::string_view name, size_type nidx) {
+    //     auto &temp = m_name.left;
+    //     if (auto it = temp.find(name.data()); it != temp.end()) {
+    //         temp.replace_data(it, nidx);
+    //         return true;
+    //     }
+    //     return false;
+    // }
 
     inline void reset_name() {
         m_name.clear();
@@ -313,7 +336,28 @@ template <typename... Ts> struct frame {
         return m_data.rend();
     }
 
-    [[nodiscard]] inline iterator erase(iterator pos) {
+    inline constexpr bool check_col_indices() const noexcept {
+        auto &temp = m_name.right;
+        auto j = 0ul;
+        while (temp.count(j) != 0 && j < cols()) {
+            ++j;
+        }
+        return j == cols();
+    }
+
+    inline void normalize_index() noexcept {
+        if (!check_col_indices()) {
+            auto &temp = m_name.right;
+            col_base_type ntemp;
+            auto j = 0ul;
+            for (auto const &el : temp) {
+                ntemp.insert(col_value_type(el.second, j++));
+            }
+            m_name = std::move(ntemp);
+        }
+    }
+
+    inline iterator erase(iterator pos) {
         auto idx = std::distance(m_data.begin(), pos);
         auto &temp = m_name.right;
         if (auto it = temp.find(idx); it != temp.end()) {
@@ -322,7 +366,7 @@ template <typename... Ts> struct frame {
         return m_data.erase(pos);
     }
 
-    [[nodiscard]] inline iterator erase(const_iterator pos) {
+    inline iterator erase(const_iterator pos) {
         auto idx = std::distance(m_data.begin(), pos);
         auto &temp = m_name.right;
         if (auto it = temp.find(idx); it != temp.end()) {
@@ -331,25 +375,39 @@ template <typename... Ts> struct frame {
         return m_data.erase(pos);
     }
 
-    [[nodiscard]] inline iterator erase(size_type pos) {
+    inline iterator erase(size_type pos) {
         auto &temp = m_name.right;
         if (auto it = temp.find(pos); it != temp.end()) {
             temp.erase(it);
         }
-        return m_data.erase(m_data.begin() + pos);
+        return m_data.erase(
+            m_data.begin() +
+            static_cast<typename iterator::difference_type>(pos));
     }
 
     inline void erase_name(size_type pos) {
         auto &temp = m_name.right;
+        bool flag = false;
         if (auto it = temp.find(pos); it != temp.end()) {
+            flag = true;
             temp.erase(it);
+        }
+        if (flag && m_name.size() != cols()) {
+            m_name.insert(col_value_type(std::move(std::to_string(pos)), pos));
         }
     }
 
     inline void erase_name(std::string_view k) {
         auto &temp = m_name.left;
+        size_type pos;
+        bool flag = false;
         if (auto it = temp.find(k.data()); it != temp.end()) {
+            pos = it->second;
             temp.erase(it);
+            flag = true;
+        }
+        if (flag && m_name.size() != cols()) {
+            m_name.insert(col_value_type(std::move(std::to_string(pos)), pos));
         }
     }
 
@@ -395,7 +453,7 @@ template <typename... Ts> struct frame {
         generate_name(prev_size);
     }
 
-    inline void resize(size_type rows, size_type cols) {
+    inline void resize(size_type cols, size_type rows) {
         m_data.resize(cols, value_type(rows));
         auto prev_size = m_name.size();
         for (auto i = cols; i < prev_size; ++i)
@@ -405,7 +463,6 @@ template <typename... Ts> struct frame {
 
     inline constexpr void reserve(size_type cap) {
         m_data.reserve(cap);
-        m_name.reserve(cap);
     }
 
     inline void resize(size_type sz, value_type val) {

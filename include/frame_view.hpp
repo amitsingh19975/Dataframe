@@ -2,7 +2,7 @@
 #define AMT_FRAME_VIEW_HPP
 
 #include <boost/bimap/bimap.hpp>
-#include <boost/bimap/unordered_set_of.hpp>
+#include <boost/bimap/set_of.hpp>
 #include <core/concepts.hpp>
 #include <slice.hpp>
 
@@ -131,9 +131,9 @@ template <bool Const, typename... Ts> struct view<frame<Ts...>, Const> {
         return m_data[index(k)];
     }
 
-    constexpr auto &at(size_type r, size_type c) { return at(c).at(r); }
+    constexpr auto &at(size_type c, size_type r) { return at(c).at(r); }
 
-    constexpr auto const &at(size_type r, size_type c) const {
+    constexpr auto const &at(size_type c, size_type r) const {
         return at(c).at(r);
     }
 

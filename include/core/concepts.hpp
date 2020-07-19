@@ -67,6 +67,10 @@ template <typename T> concept SeriesView = is_series_view_v<std::decay_t<T>>;
 
 template <typename T> concept FrameView = is_frame_view_v<std::decay_t<T>>;
 
+template <typename T> concept SeriesViewOrSeries = Series<T> || SeriesView<T>;
+
+template <typename T> concept FrameViewOrFrame = Frame<T> || FrameView<T>;
+
 } // namespace amt
 
 #endif // AMT_CORE_CONCEPTS_HPP
