@@ -21,21 +21,62 @@ template <typename To> struct to_fn {
             } else if constexpr (std::is_constructible_v<To, type>) {
                 out = To(val);
             } else if constexpr (std::is_same_v<type, std::string>) {
-                if constexpr (std::is_floating_point_v<To>) {
-                    if constexpr (std::is_same_v<To, float>) {
-                        out = std::stof(val);
-                    } else if constexpr (std::is_same_v<To, double>) {
-                        out = std::stod(val);
+                try{
+                    if constexpr (std::is_floating_point_v<To>) {
+                        if constexpr (std::is_same_v<To, float>) {
+                            out = std::stof(val);
+                        } else if constexpr (std::is_same_v<To, double>) {
+                            out = std::stod(val);
+                        }
+                    } else if constexpr (std::is_integral_v<To>) {
+                        if constexpr (std::is_same_v<To, int>) {
+                            out = std::stoi(val);
+                        } else if constexpr (std::is_same_v<To, long>) {
+                            out = std::stol(val);
+                        } else {
+                            auto temp = std::stol(val);
+                            out = static_cast<To>(temp);
+                        }
                     }
-                } else if constexpr (std::is_integral_v<To>) {
-                    if constexpr (std::is_same_v<To, int>) {
-                        out = std::stoi(val);
-                    } else if constexpr (std::is_same_v<To, long>) {
-                        out = std::stol(val);
-                    } else {
-                        auto temp = std::stol(val);
-                        out = static_cast<To>(temp);
+                }catch(...){
+                    // Do nothing
+                }
+            }
+        });
+        return out;
+    }
+
+    inline constexpr decltype(auto)
+    operator()(Storage auto &&in, Storage auto &out, bool& check) const noexcept {
+
+        visit(in, [&](auto &&val) {
+            using type = std::decay_t<decltype(val)>;
+
+            if constexpr (std::is_same_v<To, std::string> &&
+                          core::has_std_to_string_v<type>) {
+                out = std::move(std::to_string(val));
+            } else if constexpr (std::is_constructible_v<To, type>) {
+                out = To(val);
+            } else if constexpr (std::is_same_v<type, std::string>) {
+                try{
+                    if constexpr (std::is_floating_point_v<To>) {
+                        if constexpr (std::is_same_v<To, float>) {
+                            out = std::stof(val);
+                        } else if constexpr (std::is_same_v<To, double>) {
+                            out = std::stod(val);
+                        }
+                    } else if constexpr (std::is_integral_v<To>) {
+                        if constexpr (std::is_same_v<To, int>) {
+                            out = std::stoi(val);
+                        } else if constexpr (std::is_same_v<To, long>) {
+                            out = std::stol(val);
+                        } else {
+                            auto temp = std::stol(val);
+                            out = static_cast<To>(temp);
+                        }
                     }
+                }catch(...){
+                    check = true;
                 }
             }
         });
@@ -66,12 +107,16 @@ template <typename To> struct to_fn {
         if constexpr (!is_view_v<std::decay_t<S2>>) {
             out.resize(sz);
         }
-
-#pragma omp parallel for schedule(static)
+        
         for (auto i = 0ul; i < sz; ++i) {
+            bool fail = false;
             decltype(auto) in_el = in[i];
             decltype(auto) out_el = out[i];
-            this->operator()(in_el, out_el);
+            this->operator()(in_el, out_el, fail);
+            if(fail) {
+                out = in;
+                break;
+            }
         }
         return static_cast<S2 &>(out);
     }

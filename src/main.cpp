@@ -5,21 +5,12 @@
 #include <iostream>
 #include <numeric>
 #include <dataframe.hpp>
+#include <parser/csv.hpp>
 
-struct test {};int main(int, char **) {
+int main(int, char **) {
 
-    amt::frame<> s = {{"A", {"1", "2", "3", "4", "5"}},
-                      {"B", {11, 12, 13, 14, 15}},
-                      {"C", {21, 22, 23, 24, 25}},
-                      {"D", {21, 22, 23, 24, 25}},
-                      {"E", {21, 22, 23, 24, 25}},
-                      {"F", {21, 22, 23, 24, 25}}
-                      };
-    s.erase_row(0ul);
-    std::cout << s << '\n';
-    auto temp = s;
-    // std::cout << amt::to<float>(temp, amt::in_place) << '\n';
-    std::cout << (s == temp) << '\n';
-
+    auto temp = amt::read_csv("/Users/amit/Desktop/code/dataframe/src/test.csv", true);
+    std::cout<<temp<<'\n';
+    std::cout<<amt::to<int>(temp,amt::in_place)<<'\n';
     return 0;
 }

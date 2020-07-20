@@ -325,6 +325,11 @@ holds_alternative(Storage auto &&s) noexcept {
     return s.template valid_index<T>();
 }
 
+template<typename T>
+inline constexpr decltype(auto) get(Storage auto&& s){
+    return s.template cast<T>();
+}
+
 } // namespace amt
 
 #endif // AMT_CORE_STORAGE_HPP
