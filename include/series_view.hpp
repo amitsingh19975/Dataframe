@@ -16,6 +16,7 @@ template <bool Const, typename... Ts> struct view<series<Ts...>, Const> {
     static constexpr auto const is_const = Const;
 
     using view_of = series<Ts...>;
+    using name_type = std::string_view;
     using size_type = typename view_of::size_type;
     using value_type = typename view_of::value_type;
 
@@ -148,29 +149,24 @@ template <bool Const, typename... Ts> struct view<series<Ts...>, Const> {
     constexpr view() noexcept = default;
 
     constexpr view(view const &other) noexcept
-        : m_data(other.m_data), m_slice(other.m_slice), m_size(other.m_size) {}
+        : m_data(other.m_data), m_name(other.m_name), m_slice(other.m_slice),
+          m_size(other.m_size) {}
 
     constexpr view(view &&other) noexcept
-        : m_data(std::move(other.m_data)), m_slice(std::move(other.m_slice)),
-          m_size(std::move(other.m_size)) {}
+        : m_data(std::move(other.m_data)), m_name(other.m_name),
+          m_slice(std::move(other.m_slice)), m_size(std::move(other.m_size)) {}
 
-    constexpr view &operator=(view const &other) noexcept {
-        view temp(other);
-        swap(temp, *this);
-        return *this;
-    }
+    constexpr view &operator=(view const &other) noexcept = default;
 
-    constexpr view &operator=(view &&other) noexcept {
-        swap(other, *this);
-        return *this;
-    }
+    constexpr view &operator=(view &&other) noexcept = default;
 
     ~view() = default;
 
     constexpr view(Series auto &&s, slice_type sl)
-        : m_data(s.data()),
-          m_slice(detail::norm_slice(std::move(sl), s.size())),
-          m_size(s.size() ? m_slice.size() : 0ul) {}
+        : m_data(s.data())
+        , m_name(s.name())
+        , m_slice(detail::norm_slice(std::move(sl), s.size()))
+        , m_size(s.size() ? m_slice.size() : 0ul) {}
 
     constexpr view(Series auto &&s) : view(s, slice_type{}) {}
 
@@ -291,10 +287,16 @@ template <bool Const, typename... Ts> struct view<series<Ts...>, Const> {
         std::swap(LHS.m_data, RHS.m_data);
         std::swap(LHS.m_slice, RHS.m_slice);
         std::swap(LHS.m_size, RHS.m_size);
+        std::swap(LHS.m_name, RHS.m_name);
+    }
+
+    [[nodiscard]] constexpr name_type name() const noexcept{
+        return m_name;
     }
 
   private:
     pointer m_data;
+    name_type m_name;
     slice_type m_slice;
     size_type m_size{};
 };

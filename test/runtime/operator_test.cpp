@@ -1,203 +1,203 @@
 #include <catch2/catch.hpp>
 #include <dataframe.hpp>
 
-TEST_CASE( "Operator (==) for storage object", "[Operator==]" ){
+TEST_CASE( "Operator (==) for box object", "[Operator==]" ){
     {
-        amt::storage<> lhs(10);
-        amt::storage<> rhs(10);
+        amt::box<> lhs(10);
+        amt::box<> rhs(10);
 
         REQUIRE( lhs == rhs );
     }
     {
-        amt::storage<> lhs("Hello");
-        amt::storage<> rhs("Hello");
+        amt::box<> lhs("Hello");
+        amt::box<> rhs("Hello");
 
         REQUIRE( lhs == rhs );
     }
     {
-        amt::storage<> lhs('A');
-        amt::storage<> rhs('A');
+        amt::box<> lhs('A');
+        amt::box<> rhs('A');
 
         REQUIRE( lhs == rhs );
     }
 }
 
-TEST_CASE( "Operator (!=) for storage object", "[Operator!=]" ){
+TEST_CASE( "Operator (!=) for box object", "[Operator!=]" ){
     {
-        amt::storage<> lhs(10);
-        amt::storage<> rhs(20);
+        amt::box<> lhs(10);
+        amt::box<> rhs(20);
 
         REQUIRE( lhs != rhs );
     }
     {
-        amt::storage<> lhs("Hello");
-        amt::storage<> rhs("World");
+        amt::box<> lhs("Hello");
+        amt::box<> rhs("World");
 
         REQUIRE( lhs != rhs );
     }
     {
-        amt::storage<> lhs('A');
-        amt::storage<> rhs('B');
+        amt::box<> lhs('A');
+        amt::box<> rhs('B');
 
         REQUIRE( lhs != rhs );
     }
 }
 
 
-TEST_CASE( "Operator (<) for storage object", "[Operator<]" ){
+TEST_CASE( "Operator (<) for box object", "[Operator<]" ){
     {
-        amt::storage<> lhs(10);
-        amt::storage<> rhs(20);
+        amt::box<> lhs(10);
+        amt::box<> rhs(20);
 
         REQUIRE( lhs < rhs );
     }
     {
-        amt::storage<> lhs("Hello");
-        amt::storage<> rhs("World");
+        amt::box<> lhs("Hello");
+        amt::box<> rhs("World");
 
         REQUIRE( lhs < rhs );
     }
     {
-        amt::storage<> lhs('A');
-        amt::storage<> rhs('B');
+        amt::box<> lhs('A');
+        amt::box<> rhs('B');
 
         REQUIRE( lhs < rhs );
     }
 }
 
-TEST_CASE( "Operator (<=) for storage object", "[Operator<=]" ){
+TEST_CASE( "Operator (<=) for box object", "[Operator<=]" ){
     {
-        amt::storage<> lhs(10);
-        amt::storage<> rhs(10);
+        amt::box<> lhs(10);
+        amt::box<> rhs(10);
 
         REQUIRE( lhs <= rhs );
     }
     {
-        amt::storage<> lhs("Hello");
-        amt::storage<> rhs("Hello");
+        amt::box<> lhs("Hello");
+        amt::box<> rhs("Hello");
 
         REQUIRE( lhs <= rhs );
     }
     {
-        amt::storage<> lhs('A');
-        amt::storage<> rhs('A');
+        amt::box<> lhs('A');
+        amt::box<> rhs('A');
 
         REQUIRE( lhs <= rhs );
     }
 }
 
-TEST_CASE( "Operator (>) for storage object", "[Operator>]" ){
+TEST_CASE( "Operator (>) for box object", "[Operator>]" ){
     {
-        amt::storage<> lhs(20);
-        amt::storage<> rhs(10);
+        amt::box<> lhs(20);
+        amt::box<> rhs(10);
 
         REQUIRE( lhs > rhs );
     }
     {
-        amt::storage<> lhs("World");
-        amt::storage<> rhs("Hello");
+        amt::box<> lhs("World");
+        amt::box<> rhs("Hello");
 
         REQUIRE( lhs > rhs );
     }
     {
-        amt::storage<> lhs('B');
-        amt::storage<> rhs('A');
+        amt::box<> lhs('B');
+        amt::box<> rhs('A');
 
         REQUIRE( lhs > rhs );
     }
 }
 
-TEST_CASE( "Operator (>=) for storage object", "[Operator>=]" ){
+TEST_CASE( "Operator (>=) for box object", "[Operator>=]" ){
     {
-        amt::storage<> lhs(10);
-        amt::storage<> rhs(10);
+        amt::box<> lhs(10);
+        amt::box<> rhs(10);
 
         REQUIRE( lhs >= rhs );
     }
     {
-        amt::storage<> lhs("Hello");
-        amt::storage<> rhs("Hello");
+        amt::box<> lhs("Hello");
+        amt::box<> rhs("Hello");
 
         REQUIRE( lhs >= rhs );
     }
     {
-        amt::storage<> lhs('A');
-        amt::storage<> rhs('A');
+        amt::box<> lhs('A');
+        amt::box<> rhs('A');
 
         REQUIRE( lhs >= rhs );
     }
 }
 
-TEST_CASE( "Operator (+) for storage object", "[Operator+]" ){
+TEST_CASE( "Operator (+) for box object", "[Operator+]" ){
     {
-        amt::storage<> lhs(10);
-        amt::storage<> rhs(10);
-        amt::storage<> res(20);
+        amt::box<> lhs(10);
+        amt::box<> rhs(10);
+        amt::box<> res(20);
 
         REQUIRE( (lhs + rhs) == res );
     }
     {
-        amt::storage<> lhs("Hello");
-        amt::storage<> rhs("Hello");
-        amt::storage<> res("HelloHello");
+        amt::box<> lhs("Hello");
+        amt::box<> rhs("Hello");
+        amt::box<> res("HelloHello");
 
         REQUIRE( (lhs + rhs) == res );
     }
     {
-        amt::storage<> lhs('A');
-        amt::storage<> rhs('A');
-        amt::storage<> res('A' + 'A');
+        amt::box<> lhs('A');
+        amt::box<> rhs('A');
+        amt::box<> res('A' + 'A');
 
         REQUIRE( (lhs + rhs) == res );
     }
 }
 
-TEST_CASE( "Operator (-) for storage object", "[Operator-]" ){
+TEST_CASE( "Operator (-) for box object", "[Operator-]" ){
     {
-        amt::storage<> lhs(10);
-        amt::storage<> rhs(10);
-        amt::storage<> res(0);
+        amt::box<> lhs(10);
+        amt::box<> rhs(10);
+        amt::box<> res(0);
 
         REQUIRE( (lhs - rhs) == res );
     }
     {
-        amt::storage<> lhs('A');
-        amt::storage<> rhs('A');
-        amt::storage<> res(0);
+        amt::box<> lhs('A');
+        amt::box<> rhs('A');
+        amt::box<> res(0);
 
         REQUIRE( (lhs - rhs) == res );
     }
 }
 
-TEST_CASE( "Operator (*) for storage object", "[Operator*]" ){
+TEST_CASE( "Operator (*) for box object", "[Operator*]" ){
     {
-        amt::storage<> lhs(10);
-        amt::storage<> rhs(10);
-        amt::storage<> res(100);
+        amt::box<> lhs(10);
+        amt::box<> rhs(10);
+        amt::box<> res(100);
 
         REQUIRE( (lhs * rhs) == res );
     }
     {
-        amt::storage<> lhs(20.f);
-        amt::storage<> rhs(20.f);
-        amt::storage<> res(400.f);
+        amt::box<> lhs(20.f);
+        amt::box<> rhs(20.f);
+        amt::box<> res(400.f);
 
         REQUIRE( (lhs * rhs) == res );
     }
 }
 
-TEST_CASE( "Operator (/) for storage object", "[Operator*]" ){
+TEST_CASE( "Operator (/) for box object", "[Operator*]" ){
     {
-        amt::storage<> lhs(10);
-        amt::storage<> rhs(10);
-        amt::storage<> res(1);
+        amt::box<> lhs(10);
+        amt::box<> rhs(10);
+        amt::box<> res(1);
 
         REQUIRE( (lhs / rhs) == res );
     }
     {
-        amt::storage<> lhs(30.f);
-        amt::storage<> rhs(20.f);
-        amt::storage<> res((30.f / 20.f));
+        amt::box<> lhs(30.f);
+        amt::box<> rhs(20.f);
+        amt::box<> res((30.f / 20.f));
 
         REQUIRE( (lhs / rhs) == res );
     }

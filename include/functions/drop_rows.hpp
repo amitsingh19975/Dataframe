@@ -10,8 +10,8 @@ namespace amt::fn {
 
 struct drop_rows_fn {
 
-    template <typename S1, typename S2>
-    requires((Series<S1> || SeriesView<S1>)&&Series<S2>) inline decltype(auto)
+    template <SeriesViewOrSeries S1, Series S2>
+    inline decltype(auto)
     operator()(S1 const &in, S2 &out,
                std::unordered_set<std::size_t> ids) const noexcept {
 
@@ -29,8 +29,8 @@ struct drop_rows_fn {
         return static_cast<S2 &>(out);
     }
 
-    template <Tag T, typename S>
-    requires(Series<S> || SeriesView<S>) inline decltype(auto)
+    template <Tag T, SeriesViewOrSeries S>
+    inline decltype(auto)
     operator()(S &&s, [[maybe_unused]] T t,
                std::unordered_set<std::size_t> ids) const noexcept {
 
@@ -53,14 +53,14 @@ struct drop_rows_fn {
         }
     }
 
-    template <typename F1, typename F2>
-    requires((Frame<F1> || FrameView<F1>)&&Frame<F2>) inline decltype(auto)
+    template <FrameViewOrFrame F1, Frame F2>
+    inline decltype(auto)
     operator()(F1 const &in, F2 &out,
                std::unordered_set<std::size_t> rids) const noexcept {
         auto cols = in.cols();
         auto rows = in.rows();
 
-        out.resize(cols,rows - rids.size());
+        out.resize(cols, rows - rids.size());
 
 #pragma omp parallel for schedule(static)
         for (auto i = 0ul; i < cols; ++i) {
@@ -75,8 +75,32 @@ struct drop_rows_fn {
         return static_cast<F2 &>(out);
     }
 
-    template <Tag T, typename F>
-    requires(Frame<F> || FrameView<F>) inline decltype(auto)
+    template <FrameViewOrFrame F1, Frame F2>
+    inline decltype(auto)
+    operator()(F1 const &in, F2 &out, std::size_t start,
+               std::size_t end =
+                   std::numeric_limits<std::size_t>::max()) const noexcept {
+        auto cols = in.cols();
+        auto rows = in.rows();
+        if (end == std::numeric_limits<std::size_t>::max())
+            end = rows;
+        auto sz = (end - start);
+
+        out.resize(cols, sz);
+
+#pragma omp parallel for schedule(static)
+        for (auto i = 0ul; i < cols; ++i) {
+            std::size_t k{};
+            for (auto j = start; j < end; ++j) {
+                out[i][k++] = in[i][j];
+            }
+        }
+
+        return static_cast<F2 &>(out);
+    }
+
+    template <Tag T, FrameViewOrFrame F>
+    inline decltype(auto)
     operator()(F &&s, [[maybe_unused]] T t,
                std::unordered_set<std::size_t> rids) const noexcept {
 
@@ -91,7 +115,32 @@ struct drop_rows_fn {
 
         this->operator()(std::forward<F>(s), temp, std::move(rids));
 
-        temp.set_name(s.name_to_vector());
+        if constexpr (std::is_same_v<T, in_place_t>) {
+            s = std::move(temp);
+            return std::forward<F>(s);
+        } else {
+            return temp;
+        }
+    }
+
+    template <Tag T, FrameViewOrFrame F>
+    inline decltype(auto)
+    operator()(F &&s, [[maybe_unused]] T t, std::size_t start,
+               std::size_t end =
+                   std::numeric_limits<std::size_t>::max()) const noexcept {
+
+        static_assert(
+            !(is_view_v<std::decay_t<F>> && std::is_same_v<T, in_place_t>),
+            "amt::fn::drop_rows_fn::operator(F&&,T,std::unordered_set<std::"
+            "size_t>)"
+            " : "
+            "can not mutate view in place");
+
+        result_type_t<F> temp;
+
+        this->operator()(std::forward<F>(s), temp, start, end);
+
+        temp.set_name(s.names_to_vector());
 
         if constexpr (std::is_same_v<T, in_place_t>) {
             s = std::move(temp);

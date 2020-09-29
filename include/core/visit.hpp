@@ -3,7 +3,7 @@
 
 #include <core/concepts.hpp>
 
-namespace amt {
+namespace amt::core {
 
 namespace detail {
 
@@ -12,7 +12,7 @@ struct generic_tag {};
 template <typename ParamType, typename UnaryFn, std::size_t N = 0>
 inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     using storage_type = std::decay_t<decltype(s)>;
-    using type_list = typename storage_type::type_list;
+    using type_list = typename storage_type::stored_types;
 
     constexpr auto const size = storage_type::size;
     constexpr bool const is_generic_type =
@@ -21,10 +21,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     switch (s.index()) {
     case N + 0: {
         if constexpr (N + 0 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 0>;
+            using type = at_c<type_list, N + 0>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -32,10 +32,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     }
     case N + 1: {
         if constexpr (N + 1 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 1>;
+            using type = at_c<type_list, N + 1>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -43,10 +43,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     }
     case N + 2: {
         if constexpr (N + 2 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 2>;
+            using type = at_c<type_list, N + 2>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -54,10 +54,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     }
     case N + 3: {
         if constexpr (N + 3 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 3>;
+            using type = at_c<type_list, N + 3>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -65,10 +65,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     }
     case N + 4: {
         if constexpr (N + 4 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 4>;
+            using type = at_c<type_list, N + 4>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -76,10 +76,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     }
     case N + 5: {
         if constexpr (N + 5 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 5>;
+            using type = at_c<type_list, N + 5>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -87,10 +87,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     }
     case N + 6: {
         if constexpr (N + 6 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 6>;
+            using type = at_c<type_list, N + 6>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -98,10 +98,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     }
     case N + 7: {
         if constexpr (N + 7 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 7>;
+            using type = at_c<type_list, N + 7>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -109,10 +109,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     }
     case N + 8: {
         if constexpr (N + 8 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 8>;
+            using type = at_c<type_list, N + 8>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -120,10 +120,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     }
     case N + 9: {
         if constexpr (N + 9 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 9>;
+            using type = at_c<type_list, N + 9>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -131,10 +131,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     }
     case N + 10: {
         if constexpr (N + 10 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 10>;
+            using type = at_c<type_list, N + 10>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -142,10 +142,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     }
     case N + 11: {
         if constexpr (N + 11 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 11>;
+            using type = at_c<type_list, N + 11>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -153,10 +153,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     }
     case N + 12: {
         if constexpr (N + 12 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 12>;
+            using type = at_c<type_list, N + 12>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -164,10 +164,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     }
     case N + 13: {
         if constexpr (N + 13 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 13>;
+            using type = at_c<type_list, N + 13>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -175,10 +175,10 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
     }
     case N + 14: {
         if constexpr (N + 14 < size) {
-            using type = boost::mp11::mp_at_c<type_list, N + 14>;
+            using type = at_c<type_list, N + 14>;
             if constexpr ((is_generic_type ||
                            std::is_same_v<ParamType, type>)) {
-                decltype(auto) data = s.template cast<type>();
+                decltype(auto) data = s.template as<type>();
                 fn(data);
             }
         }
@@ -198,7 +198,7 @@ inline constexpr auto visit_impl(Storage auto &&s, UnaryFn &&fn) {
 template <typename UnaryFn>
 inline constexpr auto visit_helper(Storage auto &&s, UnaryFn &&fn) {
     using storage_type = std::decay_t<decltype(s)>;
-    using type_list = typename storage_type::type_list;
+    using type_list = typename storage_type::stored_types;
     if constexpr (core::is_generic_unary_v<type_list, UnaryFn>) {
         detail::visit_impl<detail::generic_tag>(std::forward<decltype(s)>(s),
                                                 std::forward<UnaryFn>(fn));
@@ -212,10 +212,19 @@ inline constexpr auto visit_helper(Storage auto &&s, UnaryFn &&fn) {
 }
 
 template <typename UnaryFn, typename... Fs>
-inline constexpr auto visit(Storage auto &&s, UnaryFn &&fn, Fs... fs) {
+inline constexpr auto visit(Storage auto &&s, UnaryFn &&fn, Fs &&... fs) {
     using storage_type = decltype(s);
     visit_helper(std::forward<storage_type>(s), std::forward<UnaryFn>(fn));
     (visit_helper(std::forward<storage_type>(s), std::forward<Fs>(fs)), ...);
+}
+
+} // namespace amt::core
+
+namespace amt {
+
+template <typename... Fs>
+inline constexpr auto visit(Box auto &&s, Fs &&... fs) {
+    core::visit(s.data(), std::forward<Fs>(fs)...);
 }
 
 } // namespace amt

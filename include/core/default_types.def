@@ -1,0 +1,71 @@
+
+#ifndef AMT_BEGIN_DEFAULT_TYPES
+    #define AMT_BEGIN_DEFAULT_TYPES(MESS)
+#endif
+
+#ifndef AMT_END_DEFAULT_TYPES
+    #define AMT_END_DEFAULT_TYPES(MESS)
+#endif
+
+#ifndef AMT_DEFINE_DEFAULT_TYPES
+    #define AMT_DEFINE_DEFAULT_TYPES(TYPE,MESS,NAME)
+#endif
+
+#ifndef AMT_TYPE_SEPARATOR
+    #define AMT_TYPE_SEPARATOR
+#endif
+
+AMT_BEGIN_DEFAULT_TYPES("Beginning of the types")
+
+#ifdef UINT64_MAX
+    AMT_DEFINE_DEFAULT_TYPES(std::uint64_t,"std::uint64_t",uint64)
+    AMT_TYPE_SEPARATOR
+#endif
+
+#ifdef INT64_MAX
+    AMT_DEFINE_DEFAULT_TYPES(std::int64_t,"std::int64_t",int64)
+    AMT_TYPE_SEPARATOR
+#endif
+
+#ifdef UINT32_MAX
+    AMT_DEFINE_DEFAULT_TYPES(std::uint32_t,"std::uint32_t",uint32)
+    AMT_TYPE_SEPARATOR
+#endif
+#ifdef INT32_MAX
+    AMT_DEFINE_DEFAULT_TYPES(std::int32_t,"std::int32_t",int32)
+    AMT_TYPE_SEPARATOR
+#endif
+
+#ifdef UINT16_MAX
+    AMT_DEFINE_DEFAULT_TYPES(std::uint16_t,"std::uint16_t",uint16)
+    AMT_TYPE_SEPARATOR
+#endif
+
+#ifdef INT16_MAX
+    AMT_DEFINE_DEFAULT_TYPES(std::int16_t,"std::int16_t",int16)
+    AMT_TYPE_SEPARATOR
+#endif
+
+#ifdef UINT8_MAX
+    AMT_DEFINE_DEFAULT_TYPES(std::uint8_t,"std::uint8_t",uint8)
+    AMT_TYPE_SEPARATOR
+#endif
+
+#ifdef INT8_MAX
+    AMT_DEFINE_DEFAULT_TYPES(std::int8_t,"std::int8_t",int8)
+    AMT_TYPE_SEPARATOR
+#endif
+
+AMT_DEFINE_DEFAULT_TYPES(std::size_t,"std::size_t",size_t) AMT_TYPE_SEPARATOR
+AMT_DEFINE_DEFAULT_TYPES(std::ptrdiff_t,"std::ptrdiff_t",ptrdiff_t) AMT_TYPE_SEPARATOR
+AMT_DEFINE_DEFAULT_TYPES(std::string,"std::string",string) AMT_TYPE_SEPARATOR
+AMT_DEFINE_DEFAULT_TYPES(float,"float",float) AMT_TYPE_SEPARATOR
+AMT_DEFINE_DEFAULT_TYPES(double,"double",double) AMT_TYPE_SEPARATOR
+AMT_DEFINE_DEFAULT_TYPES(bool,"bool",bool) 
+
+AMT_END_DEFAULT_TYPES("Ending of types")
+
+#undef AMT_DEFINE_DEFAULT_TYPES
+#undef AMT_BEGIN_DEFAULT_TYPES
+#undef AMT_END_DEFAULT_TYPES
+#undef AMT_TYPE_SEPARATOR

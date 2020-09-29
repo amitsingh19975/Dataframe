@@ -47,11 +47,13 @@ concept HasDivEq = has_op_div_equal_v<std::decay_t<T>, std::decay_t<U>>;
 template <typename T>
 concept HasStdToString = has_std_to_string_v<std::decay_t<T>>;
 
+template <typename T> concept Storage = is_storage_v<std::decay_t<T>>;
+
 } // namespace amt::core
 
 namespace amt {
 
-template <typename T> concept Storage = is_storage_v<std::decay_t<T>>;
+template <typename T> concept Box = is_box_v<std::decay_t<T>>;
 
 template <typename T> concept Series = is_series_v<std::decay_t<T>>;
 

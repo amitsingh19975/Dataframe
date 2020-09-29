@@ -10,11 +10,11 @@ namespace amt::fn {
 struct accumulate_fn {
 
     template <typename AccumType, typename Fn>
-    inline constexpr AccumType operator()(Storage auto &&in, AccumType init,
+    inline constexpr AccumType operator()(Box auto &&in, AccumType init,
                                           Fn &&fn) const noexcept {
 
         using storage_type = std::decay_t<decltype(in)>;
-        using type_list = typename storage_type::type_list;
+        using type_list = typename storage_type::stored_types;
 
         visit(in, [&, fn = std::move(fn)](auto &&val) {
             using type = std::decay_t<decltype(val)>;
@@ -35,9 +35,9 @@ struct accumulate_fn {
         return init;
     }
 
-    template <typename S, typename AccumType, typename Fn>
-    requires(Series<S> || SeriesView<S>) inline AccumType
-    operator()(S const &in, AccumType init, Fn &&fn) const noexcept {
+    template <SeriesViewOrSeries S, typename AccumType, typename Fn>
+    inline AccumType operator()(S const &in, AccumType init,
+                                Fn &&fn) const noexcept {
         auto sz = in.size();
 #pragma omp parallel for schedule(static)
         for (auto i = 0ul; i < sz; ++i) {
@@ -47,9 +47,9 @@ struct accumulate_fn {
         return init;
     }
 
-    template <typename F, typename AccumType, typename Fn>
-    requires(Frame<F> || FrameView<F>) inline AccumType
-    operator()(F const &in, AccumType init, Fn &&fn) const noexcept {
+    template <FrameViewOrFrame F, typename AccumType, typename Fn>
+    inline AccumType operator()(F const &in, AccumType init,
+                                Fn &&fn) const noexcept {
         auto cols = in.cols();
         auto rows = in.rows();
 #pragma omp parallel for schedule(static)

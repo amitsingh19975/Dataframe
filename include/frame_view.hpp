@@ -32,9 +32,6 @@ template <bool Const, typename... Ts> struct view<frame<Ts...>, Const> {
     using const_pointer = typename base_type::const_pointer;
     using reference = typename iterator::reference;
     using const_reference = typename base_type::const_reference;
-    using col_base_type =
-        std::conditional_t<Const, typename view_of::col_base_type const &,
-                           typename view_of::col_base_type &>;
 
     constexpr view() noexcept = default;
 
@@ -49,8 +46,7 @@ template <bool Const, typename... Ts> struct view<frame<Ts...>, Const> {
     ~view() = default;
 
     constexpr view(Frame auto &&f, slice_type fsl, slice_type ssl)
-        : m_name(f.name_base()),
-          m_fslice(detail::norm_slice(std::move(fsl), f.cols())) {
+        : m_fslice(detail::norm_slice(std::move(fsl), f.cols())) {
         if (f.cols() != 0) {
             auto tssl = detail::norm_slice(std::move(ssl), f.rows());
 
@@ -76,21 +72,14 @@ template <bool Const, typename... Ts> struct view<frame<Ts...>, Const> {
         return m_data.empty();
     }
 
-    [[nodiscard]] inline std::string name(size_type k) const {
+    [[nodiscard]] inline std::string_view name(size_type k) const {
         if (k >= cols()) {
-            throw std::out_of_range("amt::view<series>::name(size_type) : "
-                                    "out of bound");
+            throw std::out_of_range("amt::view<series>::name(size_type)");
         }
-        auto norm_idx = m_fslice.first() + k * m_fslice.step();
-        auto const &temp = m_name.right;
-        if (auto it = temp.find(norm_idx); it != temp.end()) {
-            return it->second;
-        } else {
-            return "";
-        }
+        return m_data[k].name();
     }
 
-    [[nodiscard]] inline std::vector<std::string> name_to_vector() const {
+    [[nodiscard]] inline std::vector<std::string> names_to_vector() const {
         std::vector<std::string> temp(cols());
 
 #pragma omp parallel for schedule(static)
@@ -157,11 +146,10 @@ template <bool Const, typename... Ts> struct view<frame<Ts...>, Const> {
     }
 
     [[nodiscard]] inline size_type index(std::string_view s) const {
-        auto idx = m_name.left.at(s.data());
-        if (!in_range(idx)) {
-            throw std::out_of_range(
-                "amt::view<frame>::index(std::string_view) : "
-                "name does not exists");
+        auto idx = 0ul;
+        for (; idx < cols(); ++idx) {
+            if (m_data[idx].name() == s)
+                break;
         }
         return idx;
     }
@@ -220,14 +208,12 @@ template <bool Const, typename... Ts> struct view<frame<Ts...>, Const> {
 
     friend void swap(view &LHS, view &RHS) noexcept {
         std::swap(LHS.m_data, RHS.m_data);
-        std::swap(LHS.m_name, RHS.m_name);
         std::swap(LHS.m_slice, RHS.m_slice);
         std::swap(LHS.m_size, RHS.m_size);
     }
 
   private:
     base_type m_data;
-    col_base_type m_name;
     slice_type m_fslice;
 };
 

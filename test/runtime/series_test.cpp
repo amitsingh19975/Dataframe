@@ -118,7 +118,7 @@ SCENARIO("Series Construction", "[Series]") {
 
         int i = 1;
         for(auto const& el : ser){
-            REQUIRE(el.cast<int>() == i);
+            REQUIRE(el.as<int>() == i);
             ++i;
         }
     }
@@ -139,7 +139,7 @@ SCENARIO("Series Construction", "[Series]") {
 
         std::size_t i = 0ul;
         for(auto const& el : ser){
-            REQUIRE(el.cast<std::string>() == v[i]);
+            REQUIRE(el.as<std::string>() == v[i]);
             ++i;
         }
     }
@@ -161,7 +161,7 @@ SCENARIO("Series Construction", "[Series]") {
 
         std::size_t i = 0ul;
         for(auto const& el : view){
-            REQUIRE(el.cast<int>() == ser[i].cast<int>());
+            REQUIRE(el.as<int>() == ser[i].as<int>());
             ++i;
         }
     }
@@ -183,7 +183,7 @@ TEST_CASE("Series copy construction", "[Series]"){
 
     std::size_t i = 0ul;
     for(auto const& el : test){
-        REQUIRE(el.cast<int>() == ser[i].cast<int>());
+        REQUIRE(el.as<int>() == ser[i].as<int>());
         ++i;
     }
 }
@@ -205,7 +205,7 @@ TEST_CASE("Series copy Assignment", "[Series]"){
 
     std::size_t i = 0ul;
     for(auto const& el : test){
-        REQUIRE(el.cast<int>() == ser[i].cast<int>());
+        REQUIRE(el.as<int>() == ser[i].as<int>());
         ++i;
     }
 }
@@ -226,7 +226,7 @@ TEST_CASE("Series move construction", "[Series]"){
 
     int i = 1;
     for(auto const& el : test){
-        REQUIRE(el.cast<int>() == i);
+        REQUIRE(el.as<int>() == i);
         ++i;
     }
 }
@@ -248,7 +248,7 @@ TEST_CASE("Series move Assignment", "[Series]"){
 
     int i = 1;
     for(auto const& el : test){
-        REQUIRE(el.cast<int>() == i);
+        REQUIRE(el.as<int>() == i);
         ++i;
     }
 }
@@ -262,7 +262,7 @@ TEST_CASE("Series constructing view", "[Series]"){
 
     std::size_t j = 0ul;
     for(auto i = 0ul; i < ser.size(); i += 2ul){
-        REQUIRE( test[j++].cast<int>() == ser[i].cast<int>() );
+        REQUIRE( test[j++].as<int>() == ser[i].as<int>() );
     }
 }
 
@@ -280,7 +280,7 @@ SCENARIO("Erasing elements from series", "[Series]"){
     REQUIRE(ser.check_types() == true);
 
     for(auto i = 0ul; i < ser.size(); ++i){
-        REQUIRE( ser[i].cast<int>() == (i + 1) );
+        REQUIRE( ser[i].as<int>() == static_cast<int>(i + 1) );
     }
 
     GIVEN( "if the position is a iterator" ){
@@ -289,7 +289,7 @@ SCENARIO("Erasing elements from series", "[Series]"){
         REQUIRE(ser.size() == 5);
         
         for(auto i = 0ul; i < ser.size(); ++i){
-            REQUIRE( ser[i].cast<int>() == (i + 2) );
+            REQUIRE( ser[i].as<int>() == static_cast<int>(i + 2) );
         }
     }
 
@@ -298,7 +298,7 @@ SCENARIO("Erasing elements from series", "[Series]"){
         REQUIRE(ser.size() == 5);
         
         for(auto i = 0ul; i < ser.size(); ++i){
-            REQUIRE( ser[i].cast<int>() == (i + 2) );
+            REQUIRE( ser[i].as<int>() == static_cast<int>(i + 2) );
         }
     }
 
@@ -325,7 +325,7 @@ SCENARIO("Series type to string", "[Series]"){
         REQUIRE(ser.empty() == true);
         REQUIRE(ser.check_types() == true);
 
-        REQUIRE(amt::type_to_string(ser) == "Empty");
+        REQUIRE(amt::type_to_string(ser) == "None");
     }
     
     GIVEN( "the container is not empty" ){

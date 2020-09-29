@@ -4,53 +4,17 @@
 #include <algorithm>
 #include <core/visit.hpp>
 #include <operator.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace amt::fn {
 
 template <typename To> struct to_fn {
 
-    inline constexpr decltype(auto)
-    operator()(Storage auto &&in, Storage auto &out) const noexcept {
+    inline constexpr decltype(auto) operator()(Box auto &&in, Box auto &out,
+                                               bool &check) const noexcept {
 
-        visit(in, [&](auto &&val) {
-            using type = std::decay_t<decltype(val)>;
-
-            if constexpr (std::is_same_v<To, std::string> &&
-                          core::has_std_to_string_v<type>) {
-                out = std::move(std::to_string(val));
-            } else if constexpr (std::is_constructible_v<To, type>) {
-                out = To(val);
-            } else if constexpr (std::is_same_v<type, std::string>) {
-                try{
-                    if constexpr (std::is_floating_point_v<To>) {
-                        if constexpr (std::is_same_v<To, float>) {
-                            out = std::stof(val);
-                        } else if constexpr (std::is_same_v<To, double>) {
-                            out = std::stod(val);
-                        }
-                    } else if constexpr (std::is_integral_v<To>) {
-                        if constexpr (std::is_same_v<To, int>) {
-                            out = std::stoi(val);
-                        } else if constexpr (std::is_same_v<To, long>) {
-                            out = std::stol(val);
-                        } else {
-                            auto temp = std::stol(val);
-                            out = static_cast<To>(temp);
-                        }
-                    }
-                }catch(...){
-                    // Do nothing
-                }
-            }
-        });
-        return out;
-    }
-
-    inline constexpr decltype(auto)
-    operator()(Storage auto &&in, Storage auto &out, bool& check) const noexcept {
-
-        visit(in, [&](auto &&val) {
-            using type = std::decay_t<decltype(val)>;
+        visit(in, [&]<typename T>(T const& val) {
+            using type = std::decay_t<T>;
 
             if constexpr (std::is_same_v<To, std::string> &&
                           core::has_std_to_string_v<type>) {
@@ -58,34 +22,29 @@ template <typename To> struct to_fn {
             } else if constexpr (std::is_constructible_v<To, type>) {
                 out = To(val);
             } else if constexpr (std::is_same_v<type, std::string>) {
-                try{
-                    if constexpr (std::is_floating_point_v<To>) {
-                        if constexpr (std::is_same_v<To, float>) {
-                            out = std::stof(val);
-                        } else if constexpr (std::is_same_v<To, double>) {
-                            out = std::stod(val);
-                        }
-                    } else if constexpr (std::is_integral_v<To>) {
-                        if constexpr (std::is_same_v<To, int>) {
-                            out = std::stoi(val);
-                        } else if constexpr (std::is_same_v<To, long>) {
-                            out = std::stol(val);
-                        } else {
-                            auto temp = std::stol(val);
-                            out = static_cast<To>(temp);
-                        }
-                    }
-                }catch(...){
+                try {
+                    out = boost::lexical_cast<To>(val);
+                } catch (...) {
                     check = true;
                 }
             }
         });
+
+        return out;
+    }
+
+    inline constexpr decltype(auto) operator()(Box auto &&in,
+                                               Box auto &out) const noexcept {
+        auto check = false;
+        this->operator()(in, out, check);
+        if (check)
+            out = in;
         return out;
     }
 
     template <Tag T>
     inline constexpr decltype(auto)
-    operator()(Storage auto &&s, [[maybe_unused]] T t) const noexcept {
+    operator()(Box auto &&s, [[maybe_unused]] T t) const noexcept {
         using storage_type = std::decay_t<decltype(s)>;
 
         if constexpr (std::is_same_v<T, in_place_t>) {
@@ -97,49 +56,44 @@ template <typename To> struct to_fn {
         }
     }
 
-    template <typename S1, typename S2>
-    requires((Series<S1> ||
-              SeriesView<S1>)&&(Series<S2> ||
-                                SeriesView<S2>)) inline decltype(auto)
-    operator()(S1 const &in, S2 &out) const noexcept {
+    template <SeriesViewOrSeries S1, SeriesViewOrSeries S2>
+    inline decltype(auto) operator()(S1 const &in, S2 &out) const noexcept {
         auto sz = in.size();
 
         if constexpr (!is_view_v<std::decay_t<S2>>) {
             out.resize(sz);
         }
-        
+
         for (auto i = 0ul; i < sz; ++i) {
             bool fail = false;
-            decltype(auto) in_el = in[i];
-            decltype(auto) out_el = out[i];
+            auto const& in_el = in[i];
+            auto& out_el = out[i];
             this->operator()(in_el, out_el, fail);
-            if(fail) {
+            if (fail) {
                 out = in;
                 break;
             }
         }
-        return static_cast<S2 &>(out);
+        return out;
     }
 
-    template <Tag T, typename S>
-    requires(Series<S> || SeriesView<S>) inline constexpr decltype(auto)
-    operator()(S &&s, [[maybe_unused]] T t) const {
+    template <Tag T, SeriesViewOrSeries S>
+    inline constexpr decltype(auto) operator()(S &&s,
+                                               [[maybe_unused]] T t) const {
 
+        result_type_t<S> temp;
+        this->operator()(std::forward<S>(s), temp);
         if constexpr (std::is_same_v<T, in_place_t>) {
-            this->operator()(std::forward<S>(s), std::forward<S>(s));
+            s = std::move(temp);
             return std::forward<S>(s);
         } else {
-            result_type_t<S> temp;
             this->operator()(std::forward<S>(s), temp);
             return temp;
         }
     }
 
-    template <typename F1, typename F2>
-    requires((Frame<F1> ||
-              FrameView<F1>)&&(Frame<F2> ||
-                               FrameView<F2>)) inline decltype(auto)
-    operator()(F1 const &in, F2 &out) const noexcept {
+    template <FrameViewOrFrame F1, FrameViewOrFrame F2>
+    inline decltype(auto) operator()(F1 const &in, F2 &out) const noexcept {
         auto cols = in.cols();
         auto rows = in.rows();
         using value_type = typename std::decay_t<F2>::value_type;
@@ -159,17 +113,17 @@ template <typename To> struct to_fn {
         return static_cast<F2 &>(out);
     }
 
-    template <Tag T, typename F>
-    requires(Frame<F> || FrameView<F>) inline constexpr decltype(auto)
-    operator()(F &&s, [[maybe_unused]] T t) const {
+    template <Tag T, FrameViewOrFrame F>
+    inline constexpr decltype(auto) operator()(F &&s,
+                                               [[maybe_unused]] T t) const {
+
+        result_type_t<F> temp;
+        this->operator()(std::forward<F>(s), temp);
 
         if constexpr (std::is_same_v<T, in_place_t>) {
-            this->operator()(std::forward<F>(s), std::forward<F>(s));
+            s = std::move(temp);
             return std::forward<F>(s);
         } else {
-            result_type_t<F> temp;
-
-            this->operator()(std::forward<F>(s), temp);
             return temp;
         }
     }

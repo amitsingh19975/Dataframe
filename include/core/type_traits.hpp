@@ -84,29 +84,28 @@ inline static constexpr bool const has_std_to_string_v = requires(T t) {
     std::to_string(t);
 };
 
-template <typename T, std::size_t N> struct comman_integral_type {
-    using type = T;
-};
+namespace detail {
+
+template <typename T> constexpr auto get_common_integral_type() noexcept {
+#define AMT_BEGIN_DEFAULT_TYPES(MESS)                                          \
+    if constexpr (false)                                                       \
+        return;
+#define AMT_END_DEFAULT_TYPES(MESS) else return std::declval<T>();
+
+#define AMT_DEFINE_DEFAULT_TYPES(TYPE, MESS, NAME)                             \
+    else if constexpr ((sizeof(T) == sizeof(TYPE)) and                         \
+                       (std::numeric_limits<T>::is_signed ==                   \
+                        std::numeric_limits<                                   \
+                            TYPE>::is_signed)) return std::declval<TYPE>();
+
+#include <core/default_types.def>
+}
+
+} // namespace detail
 
 template <typename T>
 using comman_integral_type_t =
-    typename comman_integral_type<T, sizeof(T)>::type;
-
-template <typename T>
-struct comman_integral_type<T, sizeof(int8_t)>
-    : std::conditional<std::numeric_limits<T>::is_signed, int8_t, uint8_t> {};
-
-template <typename T>
-struct comman_integral_type<T, sizeof(int16_t)>
-    : std::conditional<std::numeric_limits<T>::is_signed, int16_t, uint16_t> {};
-
-template <typename T>
-struct comman_integral_type<T, sizeof(int32_t)>
-    : std::conditional<std::numeric_limits<T>::is_signed, int32_t, uint32_t> {};
-
-template <typename T>
-struct comman_integral_type<T, sizeof(int64_t)>
-    : std::conditional<std::numeric_limits<T>::is_signed, int64_t, uint64_t> {};
+    decltype(detail::get_common_integral_type<std::decay_t<T>>());
 
 template <typename T>
 struct norm_type
@@ -117,18 +116,28 @@ struct norm_type
 
 template <> struct norm_type<bool> { using type = bool; };
 
-template <typename T> using norm_type_t = typename norm_type<T>::type;
+template <typename T>
+using norm_type_t = typename norm_type<std::decay_t<T>>::type;
 
 template <typename> struct always_false : std::false_type {};
 
 template <typename T>
 inline static constexpr auto const always_false_v = always_false<T>::value;
 
+template <typename... Ts> struct storage;
+
+template <typename T> struct is_storage : std::false_type {};
+
+template <typename T>
+inline static constexpr bool const is_storage_v = is_storage<T>::value;
+
+template <typename... Ts> struct is_storage<storage<Ts...>> : std::true_type {};
+
 } // namespace amt::core
 
 namespace amt {
 
-template <typename... Ts> struct storage;
+template <typename... Ts> struct box;
 
 template <typename... Ts> struct series;
 
@@ -166,6 +175,13 @@ inline static constexpr bool const is_slice_v = is_slice<T>::value;
 
 template <typename T> struct is_slice<basic_slice<T>> : std::true_type {};
 
+template <typename T> struct is_box : std::false_type {};
+
+template <typename T>
+inline static constexpr bool const is_box_v = is_box<T>::value;
+
+template <typename... Ts> struct is_box<box<Ts...>> : std::true_type {};
+
 template <typename T> struct is_series : std::false_type {};
 
 template <typename T>
@@ -202,13 +218,6 @@ template <typename T>
 inline static constexpr bool const is_view_v = is_view<std::decay_t<T>>::value;
 
 template <typename T, bool C> struct is_view<view<T, C>> : std::true_type {};
-
-template <typename T> struct is_storage : std::false_type {};
-
-template <typename T>
-inline static constexpr bool const is_storage_v = is_storage<T>::value;
-
-template <typename... Ts> struct is_storage<storage<Ts...>> : std::true_type {};
 
 template <typename... Ts> struct is_proper_slice_args;
 
@@ -405,6 +414,11 @@ inline static constexpr bool const
 template <typename... Ts>
 using normalized_list_t =
     boost::mp11::mp_remove<boost::mp11::mp_list<Ts...>, packed_storage_t>;
+
+template <typename L, typename T>
+using find_type_t = boost::mp11::mp_find<L, T>;
+
+template <typename L, std::size_t N> using at_c = boost::mp11::mp_at_c<L, N>;
 
 } // namespace amt::core
 

@@ -11,10 +11,10 @@ struct filter_fn {
 
   private:
     template <typename Fn>
-    inline constexpr bool check(Storage auto &&in, Fn &&fn) const noexcept {
+    inline constexpr bool check(Box auto &&in, Fn &&fn) const noexcept {
 
         using storage_type = std::decay_t<decltype(in)>;
-        using type_list = typename storage_type::type_list;
+        using type_list = typename storage_type::stored_types;
 
         bool flag = false;
         visit(in, [&, fn = std::move(fn)](auto &&val) {
@@ -39,8 +39,8 @@ struct filter_fn {
 
   public:
     template <typename Fn>
-    inline constexpr decltype(auto)
-    operator()(Storage auto &&in, Storage auto &out, Fn &&fn) const noexcept {
+    inline constexpr decltype(auto) operator()(Box auto &&in, Box auto &out,
+                                               Fn &&fn) const noexcept {
 
         if (!check(in, std::move(fn))) {
             out = std::move(in);
@@ -50,14 +50,13 @@ struct filter_fn {
 
     template <Tag T, typename Fn>
     inline constexpr decltype(auto)
-    operator()(Storage auto &&s, [[maybe_unused]] T t, Fn &&fn) const noexcept {
+    operator()(Box auto &&s, [[maybe_unused]] T t, Fn &&fn) const noexcept {
         using storage_type = std::decay_t<decltype(s)>;
 
         auto temp = storage_type{};
         this->operator()(s, temp, std::forward<Fn>(fn));
 
         if constexpr (std::is_same_v<T, in_place_t>) {
-            this->operator()(s, temp, std::forward<Fn>(fn));
             s = std::move(temp);
             return s;
         } else {
@@ -65,9 +64,9 @@ struct filter_fn {
         }
     }
 
-    template <typename S1, typename S2, typename Fn>
-    requires((Series<S1> || SeriesView<S1>)&&Series<S2>) inline decltype(auto)
-    operator()(S1 const &in, S2 &out, Fn &&fn) const noexcept {
+    template <SeriesViewOrSeries S1, Series S2, typename Fn>
+    inline decltype(auto) operator()(S1 const &in, S2 &out,
+                                     Fn &&fn) const noexcept {
         auto sz = in.size();
 
         for (auto i = 0ul; i < sz; ++i) {
@@ -79,9 +78,9 @@ struct filter_fn {
         return static_cast<S2 &>(out);
     }
 
-    template <Tag T, typename S, typename Fn>
-    requires(Series<S> || SeriesView<S>) inline constexpr decltype(auto)
-    operator()(S &&s, [[maybe_unused]] T t, Fn &&fn) const {
+    template <Tag T, SeriesViewOrSeries S, typename Fn>
+    inline constexpr decltype(auto) operator()(S &&s, [[maybe_unused]] T t,
+                                               Fn &&fn) const {
 
         static_assert(
             !(is_view_v<std::decay_t<S>> && std::is_same_v<T, in_place_t>),
@@ -100,9 +99,9 @@ struct filter_fn {
         }
     }
 
-    template <typename F1, typename F2, typename Fn>
-    requires((Frame<F1> || FrameView<F1>)&&Frame<F2>) inline decltype(auto)
-    operator()(F1 const &in, F2 &out, Fn &&fn) const noexcept {
+    template <FrameViewOrFrame F1, Frame F2, typename Fn>
+    inline decltype(auto) operator()(F1 const &in, F2 &out,
+                                     Fn &&fn) const noexcept {
         auto cols = in.cols();
         auto rows = in.rows();
 
@@ -127,9 +126,9 @@ struct filter_fn {
         return static_cast<F2 &>(out);
     }
 
-    template <Tag T, typename F, typename Fn>
-    requires(Frame<F> || FrameView<F>) inline constexpr decltype(auto)
-    operator()(F &&s, [[maybe_unused]] T t, Fn &&fn) const {
+    template <Tag T, FrameViewOrFrame F, typename Fn>
+    inline constexpr decltype(auto) operator()(F &&s, [[maybe_unused]] T t,
+                                               Fn &&fn) const {
 
         static_assert(
             !(is_view_v<std::decay_t<F>> && std::is_same_v<T, in_place_t>),

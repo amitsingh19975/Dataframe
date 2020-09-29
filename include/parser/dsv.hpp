@@ -116,7 +116,7 @@ namespace amt{
             ret_type res(i);
 
             if( use_header_from_csv ){
-                res = std::move( ret_type( std::move(temp) ) );
+                res.set_name(std::move(temp));
             }else{
                 std::size_t j{};
                 for(auto& el : temp){
