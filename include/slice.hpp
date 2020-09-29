@@ -43,6 +43,23 @@ struct slice_stride {
     std::size_t data{1};
 };
 
+namespace literal{
+    
+    constexpr slice_first operator ""_f(unsigned long long int val) noexcept{
+        return {val};
+    }
+    
+    constexpr slice_last operator ""_l(unsigned long long int val) noexcept{
+        return {val};
+    }
+    
+    constexpr slice_stride operator ""_s(unsigned long long int val) noexcept{
+        return {val};
+    }
+
+} // namespace literal
+
+
 template <typename T> struct basic_slice {
 
     using value_type = T;

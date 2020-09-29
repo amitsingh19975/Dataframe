@@ -56,13 +56,12 @@ template <typename To> struct to_fn {
         }
     }
 
-    template <SeriesViewOrSeries S1, SeriesViewOrSeries S2>
+    template <SeriesViewOrSeries S1, Series S2>
     inline decltype(auto) operator()(S1 const &in, S2 &out) const noexcept {
         auto sz = in.size();
+        out.resize(sz);
 
-        if constexpr (!is_view_v<std::decay_t<S2>>) {
-            out.resize(sz);
-        }
+        out.name() = in.name();
 
         for (auto i = 0ul; i < sz; ++i) {
             bool fail = false;
@@ -92,23 +91,16 @@ template <typename To> struct to_fn {
         }
     }
 
-    template <FrameViewOrFrame F1, FrameViewOrFrame F2>
+    template <FrameViewOrFrame F1, Frame F2>
     inline decltype(auto) operator()(F1 const &in, F2 &out) const noexcept {
         auto cols = in.cols();
         auto rows = in.rows();
         using value_type = typename std::decay_t<F2>::value_type;
-
-        if constexpr (!is_view_v<std::decay_t<F2>>) {
-            out.resize(cols, value_type(rows));
-        }
+        out.resize(cols, value_type(rows));
 
 #pragma omp parallel for schedule(static)
         for (auto i = 0ul; i < cols; ++i) {
-            for (auto j = 0ul; j < rows; ++j) {
-                decltype(auto) in_el = in[i][j];
-                decltype(auto) out_el = out[i][j];
-                this->operator()(in_el, out_el);
-            }
+            this->operator()(in[i],out[i]);
         }
         return static_cast<F2 &>(out);
     }

@@ -49,7 +49,7 @@ struct transform_fn {
         }
     }
 
-    template <SeriesViewOrSeries S1, SeriesViewOrSeries S2, typename Fn>
+    template <SeriesViewOrSeries S1, Series S2, typename Fn>
     inline decltype(auto) operator()(S1 const &in, S2 &out,
                                      Fn &&fn) const noexcept {
         auto sz = in.size();
@@ -58,7 +58,6 @@ struct transform_fn {
             out.resize(sz);
         }
 
-#pragma omp parallel for schedule(static)
         for (auto i = 0ul; i < sz; ++i) {
             decltype(auto) in_el = in[i];
             decltype(auto) out_el = out[i];
@@ -82,7 +81,7 @@ struct transform_fn {
         }
     }
 
-    template <FrameViewOrFrame F1, FrameViewOrFrame F2, typename Fn>
+    template <FrameViewOrFrame F1, Frame F2, typename Fn>
     inline decltype(auto) operator()(F1 const &in, F2 &out,
                                      Fn &&fn) const noexcept {
         auto cols = in.cols();

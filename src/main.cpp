@@ -16,7 +16,7 @@ void clean_data(amt::frame<>& f){
         // "price",
         "bedrooms",
         "bathrooms",
-        // "sqft_living",
+        "sqft_living",
         "sqft_lot",
         "floors",
         "waterfront",
@@ -31,7 +31,7 @@ void clean_data(amt::frame<>& f){
         "lat",
         "long",
         "sqft_living15",
-        "sqft_lot15" 
+        // "sqft_lot15" 
     };
     amt::drop_cols(f,amt::in_place, std::move(n));
     amt::filter(f,amt::in_place,[](std::string_view val){
@@ -136,29 +136,31 @@ void plot_pred(double s, double c, amt::frame<> const& x, amt::frame<> const& y)
 int main(int, char **) {
 
     auto temp = amt::read_csv("/Users/amit/Desktop/code/dataframe/src/test.csv", true);
-    clean_data(temp);
+    amt::to<float>(temp,amt::in_place);
+    std::cout<<std::fixed<<amt::svar(temp["price"])<<'\n';
+    // clean_data(temp);
     
-    auto i = 0ul;
-    auto y = amt::drop_cols(temp,amt::out_place,[&i](auto const&){
-        if(i++ > 0) return true;
-        return false;
-    });
-    auto x = amt::drop_cols(temp,amt::out_place,amt::index_list{0});
+    // auto i = 0ul;
+    // auto y = amt::drop_cols(temp,amt::out_place,[&i](auto const&){
+    //     if(i++ > 0) return true;
+    //     return false;
+    // });
+    // auto x = amt::drop_cols(temp,amt::out_place,amt::index_list{0});
 
-    auto split_ratio = 0.25;
-    auto rsz = y.rows();
-    auto training_sz = static_cast<std::size_t>(split_ratio * static_cast<double>(rsz));
-    // auto testing_sz = rsz - training_sz;
+    // auto split_ratio = 0.25;
+    // auto rsz = y.rows();
+    // auto training_sz = static_cast<std::size_t>(split_ratio * static_cast<double>(rsz));
+    // // auto testing_sz = rsz - training_sz;
 
-    auto x_train = amt::drop_rows(x,amt::out_place,training_sz);
-    auto y_train = amt::drop_rows(y,amt::out_place,training_sz);
+    // auto x_train = amt::drop_rows(x,amt::out_place,training_sz);
+    // auto y_train = amt::drop_rows(y,amt::out_place,training_sz);
 
-    auto x_test = amt::drop_rows(x,amt::out_place,0, training_sz);
-    auto y_test = amt::drop_rows(y,amt::out_place,0, training_sz);
-    // plot(x,y);
+    // auto x_test = amt::drop_rows(x,amt::out_place,0, training_sz);
+    // auto y_test = amt::drop_rows(y,amt::out_place,0, training_sz);
+    // // plot(x,y);
 
-    auto l_model = amt::linear_regression(x_train,y_train);
-    plot_pred(l_model.slope(), l_model.intercept(), x_test, y_test);
+    // auto l_model = amt::linear_regression(x_train,y_train);
+    // plot_pred(l_model.slope(), l_model.intercept(), x_test, y_test);
     // auto pred = l_model.predict(x_test);
     // y_test.push_back(std::move(pred));
 

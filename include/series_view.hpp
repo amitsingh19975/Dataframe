@@ -313,7 +313,7 @@ template <Series T> view(T &s) -> view<std::decay_t<T>, false>;
 
 template <View V>
 requires Series<typename V::view_of> std::string type_to_string(V const &s) {
-    return s.empty() ? "Empty" : type_to_string(s[0]);
+    return s.empty() ? "None" : type_to_string(s[0]);
 }
 
 } // namespace amt
