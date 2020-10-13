@@ -52,6 +52,24 @@ template <typename... Ts> struct series {
     }
 
     template <typename T>
+    constexpr series(result<T> const &data) {
+        if (!data) {
+            throw std::runtime_error(data.what());
+        }
+        auto temp = series(*data);
+        swap(temp,*this);
+    }
+
+    template <typename T>
+    constexpr series(result<T> &&data) {
+        if (!data) {
+            throw std::runtime_error(data.what());
+        }
+        auto temp = series(std::move(*data));
+        swap(temp,*this);
+    }
+
+    template <typename T>
     constexpr series(std::initializer_list<T> li)
         : series(std::move(std::vector<T>(std::move(li)))) {}
 
@@ -266,6 +284,11 @@ template <typename... Ts> struct series {
     template <typename T, bool isConst>
     [[nodiscard]] constexpr view<series, isConst> operator()() noexcept {
         return {*this};
+    }
+
+    friend void swap(series& lhs, series& rhs){
+        std::swap(lhs.m_data, rhs.m_data);
+        std::swap(lhs.m_name, rhs.m_name);
     }
 
   private:

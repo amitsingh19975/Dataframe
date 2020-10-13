@@ -35,7 +35,7 @@ namespace amt{
             if( in.empty() ) return {};
             else if( !(in.is_integer() || in.is_floating_point()) ) return {};
             auto sum = accumulate(in, T{}, [fn = std::move(fn)]<typename U>(auto const& res, U const& val){
-                if constexpr( std::is_constructible_v<U,T> ){
+                if constexpr( std::is_convertible_v<U,T> ){
                     auto v = static_cast<T>(val);
                     auto r = static_cast<T>(res);
                     return fn(r,v);

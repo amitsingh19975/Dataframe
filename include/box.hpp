@@ -1,6 +1,7 @@
 #if !defined(AMT_BOX_HPP)
 #define AMT_BOX_HPP
 
+#include <core/result.hpp>
 #include <core/storage.hpp>
 #include <sstream>
 
@@ -22,8 +23,25 @@ template <typename... Ts> struct box {
     constexpr ~box() = default;
 
     template <typename U>
-    requires(not Box<U>) constexpr box(U &&data)
+    requires(not Box<U> && not Result<U>) constexpr box(U &&data)
         : m_data(std::forward<U>(data)) {}
+
+    template <typename U> constexpr box(result<U> const &data){
+        if (!data) {
+            throw std::runtime_error(data.what());
+        }
+        auto temp = box(*data);
+        swap(temp,*this);
+    }
+
+    template <typename U>
+    constexpr box(result<U> &&data) : box(std::move(*data)) {
+        if (!data) {
+            throw std::runtime_error(data.what());
+        }
+        auto temp = box(std::move(*data));
+        swap(temp,*this);
+    }
 
     [[nodiscard]] constexpr index_type index() const noexcept {
         return m_data.index();
@@ -95,15 +113,17 @@ template <typename... Ts> struct box {
         return m_data;
     }
 
+    friend void swap(box& lhs, box& rhs){
+        std::swap(lhs.m_data, rhs.m_data);
+    }
+
   private:
     base_type m_data;
 };
 
-[[nodiscard]] inline std::string type_to_string(Box auto const& b) {
+[[nodiscard]] inline std::string type_to_string(Box auto const &b) {
     std::string temp = "None";
-    visit(b,[&temp](auto const& val){
-        temp = core::type_to_string(val);
-    });
+    visit(b, [&temp](auto const &val) { temp = core::type_to_string(val); });
     return temp;
 }
 

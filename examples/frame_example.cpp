@@ -64,7 +64,7 @@ int main(int, char **) {
         //[ Column: "0", Type: "std::int32_t" ]{ 2, 4, 6, 8, 10 }
         //[ Column: "1", Type: "std::string" ]{ "AA", "BB", "CC", "DD", "EE" }
         std::cout << "F1 + F2: { " << std::endl
-                  << (fr + fr) << "}" << std::endl;
+                  << amt::frame<>(fr + fr) << "}" << std::endl;
         std::cout << std::endl;
     }
 

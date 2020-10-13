@@ -38,7 +38,8 @@ template <typename... Ts> struct frame {
 
     constexpr frame(size_type sz) : m_data(sz) { generate_name(0ul); }
 
-    constexpr frame(size_type sz, size_type row, box_type val) : m_data(sz, value_type(row,std::move(val))) {
+    constexpr frame(size_type sz, size_type row, box_type val)
+        : m_data(sz, value_type(row, std::move(val))) {
         generate_name(0ul);
     }
 
@@ -60,6 +61,22 @@ template <typename... Ts> struct frame {
 
     frame(std::initializer_list<value_type> li)
         : frame(std::move(std::vector<value_type>(std::move(li)))) {}
+
+    template <typename U> frame(result<U> const &r) {
+        if (!r) {
+            throw std::runtime_error(r.what());
+        }
+        auto temp = frame(*r);
+        swap(temp,*this);
+    }
+
+    template <typename U> frame(result<U> &&r) {
+        if (!r) {
+            throw std::runtime_error(r.what());
+        }
+        auto temp = frame(std::move(*r));
+        swap(temp,*this);
+    }
 
     frame(FrameView auto &&fv) : frame(fv.rows(), fv.cols()) {
 

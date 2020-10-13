@@ -422,4 +422,22 @@ template <typename L, std::size_t N> using at_c = boost::mp11::mp_at_c<L, N>;
 
 } // namespace amt::core
 
+namespace amt{
+
+template<typename R>
+struct result;
+
+template<typename R>
+struct is_result : std::false_type{};
+
+template<typename R>
+struct is_result< result<R> > : std::true_type{};
+
+
+template<typename R>
+inline static constexpr bool is_result_v = is_result< std::decay_t<R> >::value;
+    
+} // namespace amt
+
+
 #endif // AMT_CORE_TYPE_TRAITS_HPP

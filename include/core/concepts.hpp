@@ -73,6 +73,8 @@ template <typename T> concept SeriesViewOrSeries = Series<T> || SeriesView<T>;
 
 template <typename T> concept FrameViewOrFrame = Frame<T> || FrameView<T>;
 
+template <typename T> concept Result = is_result_v<T>;
+
 } // namespace amt
 
 #endif // AMT_CORE_CONCEPTS_HPP
