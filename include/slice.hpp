@@ -1,79 +1,92 @@
 #if !defined(AMT_SLICE_HPP)
 #define AMT_SLICE_HPP
 
-#include <boost/mp11/mpl_tuple.hpp>
-#include <core/concepts.hpp>
+#include <core/utils.hpp>
 #include <cstddef>
 #include <limits>
+#include <traits/slice_traits.hpp>
 
 namespace amt {
 
-struct slice_first {
-    constexpr slice_first() noexcept = default;
-    constexpr slice_first(slice_first const &other) noexcept = default;
-    constexpr slice_first(slice_first &&other) noexcept = default;
-    constexpr slice_first &
-    operator=(slice_first const &other) noexcept = default;
-    constexpr slice_first &operator=(slice_first &&other) noexcept = default;
-    ~slice_first() = default;
-    constexpr slice_first(std::size_t d) noexcept : data(d) {}
+struct end_t {
+    template <typename U>
+    requires(std::is_integral_v<U> &&
+             !std::numeric_limits<U>::is_signed) constexpr
+    operator U() const noexcept {
+        return std::numeric_limits<U>::max();
+    }
+};
+
+inline constexpr auto end = end_t{};
+
+namespace arg {
+
+struct first {
+    constexpr first() noexcept = default;
+    constexpr first(first const &other) noexcept = default;
+    constexpr first(first &&other) noexcept = default;
+    constexpr first &operator=(first const &other) noexcept = default;
+    constexpr first &operator=(first &&other) noexcept = default;
+    constexpr ~first() noexcept = default;
+    constexpr first(std::size_t d) noexcept : data(d) {}
     std::size_t data{0};
 };
 
-struct slice_last {
-    constexpr slice_last() noexcept = default;
-    constexpr slice_last(slice_last const &other) noexcept = default;
-    constexpr slice_last(slice_last &&other) noexcept = default;
-    constexpr slice_last &operator=(slice_last const &other) noexcept = default;
-    constexpr slice_last &operator=(slice_last &&other) noexcept = default;
-    ~slice_last() = default;
-    constexpr slice_last(std::size_t d) noexcept : data(d) {}
-    std::size_t data{std::numeric_limits<std::size_t>::max()};
+struct last {
+    constexpr last() noexcept = default;
+    constexpr last(last const &other) noexcept = default;
+    constexpr last(last &&other) noexcept = default;
+    constexpr last &operator=(last const &other) noexcept = default;
+    constexpr last &operator=(last &&other) noexcept = default;
+    constexpr ~last() noexcept = default;
+    constexpr last(std::size_t d) noexcept : data(d) {}
+    std::size_t data{end};
 };
 
-struct slice_stride {
-    constexpr slice_stride() noexcept = default;
-    constexpr slice_stride(slice_stride const &other) noexcept = default;
-    constexpr slice_stride(slice_stride &&other) noexcept = default;
-    constexpr slice_stride &
-    operator=(slice_stride const &other) noexcept = default;
-    constexpr slice_stride &operator=(slice_stride &&other) noexcept = default;
-    ~slice_stride() = default;
-    constexpr slice_stride(std::size_t d) noexcept : data(d) {}
+struct step {
+    constexpr step() noexcept = default;
+    constexpr step(step const &other) noexcept = default;
+    constexpr step(step &&other) noexcept = default;
+    constexpr step &operator=(step const &other) noexcept = default;
+    constexpr step &operator=(step &&other) noexcept = default;
+    constexpr ~step() noexcept = default;
+    constexpr step(std::size_t d) noexcept : data(d) {}
     std::size_t data{1};
 };
 
-namespace literal{
-    
-    constexpr slice_first operator ""_f(unsigned long long int val) noexcept{
-        return {val};
-    }
-    
-    constexpr slice_last operator ""_l(unsigned long long int val) noexcept{
-        return {val};
-    }
-    
-    constexpr slice_stride operator ""_s(unsigned long long int val) noexcept{
-        return {val};
-    }
+} // namespace arg
+
+namespace literal {
+
+constexpr arg::first operator""_f(unsigned long long int val) noexcept {
+    return {val};
+}
+
+constexpr arg::last operator""_l(unsigned long long int val) noexcept {
+    return {val};
+}
+
+constexpr arg::step operator""_s(unsigned long long int val) noexcept {
+    return {val};
+}
 
 } // namespace literal
-
 
 template <typename T> struct basic_slice {
 
     using value_type = T;
+    using base_type = std::tuple<value_type, value_type, value_type>;
     using reference = T &;
     using const_reference = T const &;
     using pointer = T *;
     using const_pointer = T const *;
     using size_type = std::size_t;
 
+    template <typename U> friend struct basic_slice;
+
     static_assert(!std::numeric_limits<value_type>::is_signed,
                   "amt::basic_slice<T> : "
                   "T should be unsigned type");
-
-    static constexpr auto const end = std::numeric_limits<value_type>::max();
 
     constexpr basic_slice() noexcept = default;
     constexpr basic_slice(basic_slice const &other) noexcept = default;
@@ -81,83 +94,77 @@ template <typename T> struct basic_slice {
     constexpr basic_slice &
     operator=(basic_slice const &other) noexcept = default;
     constexpr basic_slice &operator=(basic_slice &&other) noexcept = default;
-    ~basic_slice() = default;
+    constexpr ~basic_slice() noexcept = default;
 
     template <typename U>
     constexpr basic_slice(basic_slice<U> other) noexcept
-        : m_first(std::move(static_cast<value_type>(other.m_first))),
-          m_last(std::move(static_cast<value_type>(other.m_last))),
-          m_stride(std::move(static_cast<value_type>(other.m_stride))) {}
+        : m_data(std::move(other.m_data)) {}
 
-    template <typename... Args>
-    requires is_proper_slice_args_v<Args...> constexpr basic_slice(
-        Args &&... args) {
+    template <typename Arg0, typename... Args>
+    requires(!Slice<Args> && ... &&
+             !Slice<Arg0>) constexpr basic_slice(Arg0 &&arg0, Args &&... arg) {
 
-        static_assert(sizeof...(Args) <= 3,
-                      "amt::basic_slice<T>(Args&&...) : "
+        static_assert(sizeof...(Args) <= 2,
+                      "amt::basic_slice<T>(Arg0&&, Args&&...) : "
                       "arity should be equal to 3 or less");
 
-        auto tp = std::forward_as_tuple(args...);
+        auto tp = std::forward_as_tuple(std::forward<Arg0>(arg0),
+                                        std::forward<Args>(arg)...);
 
-        boost::mp11::mp_for_each<boost::mp11::mp_iota_c<sizeof...(Args)>>(
-            [&, this](auto I) {
-                constexpr auto const idx = decltype(I)::value;
-                auto &val = std::get<idx>(tp);
-                using val_type = std::decay_t<decltype(val)>;
+        tuple_for(tp, [this]<typename U, typename Index>(U const &el, Index) {
+            constexpr auto idx = Index::value;
+            if constexpr (std::is_same_v<U, arg::first>) {
+                std::get<0>(m_data) = static_cast<value_type>(el.data);
+            } else if constexpr (std::is_same_v<U, arg::last>) {
+                std::get<1>(m_data) = static_cast<value_type>(el.data);
+            } else if constexpr (std::is_same_v<U, arg::step>) {
+                std::get<2>(m_data) = static_cast<value_type>(el.data);
+            } else {
+                std::get<idx>(m_data) = static_cast<value_type>(el);
+            }
+        });
 
-                if constexpr (std::is_same_v<val_type, slice_first>) {
-                    this->m_first = val.data;
-                } else if constexpr (std::is_same_v<val_type, slice_last>) {
-                    this->m_last = val.data;
-                } else if constexpr (std::is_same_v<val_type, slice_stride>) {
-                    this->m_stride = val.data;
-                } else {
-                    if constexpr (idx == 0ul) {
-                        m_first = static_cast<value_type>(val);
-                    } else if constexpr (idx == 1ul) {
-                        m_last = static_cast<value_type>(val);
-                    } else {
-                        m_stride = static_cast<value_type>(val);
-                    }
-                }
-            });
-
-        if (m_stride == 0) {
+        if (step() == 0) {
             throw std::runtime_error("amt::basic_slice<T>(Args&&...) : "
                                      "stides or steps can not be zero");
         }
     }
 
     [[nodiscard]] inline constexpr reference first() noexcept {
-        return m_first;
+        return std::get<0>(m_data);
     }
 
     [[nodiscard]] inline constexpr const_reference first() const noexcept {
-        return m_first;
+        return std::get<0>(m_data);
     }
 
-    [[nodiscard]] inline constexpr reference last() noexcept { return m_last; }
+    [[nodiscard]] inline constexpr reference last() noexcept {
+        return std::get<1>(m_data);
+    }
 
     [[nodiscard]] inline constexpr const_reference last() const noexcept {
-        return m_last;
+        return std::get<1>(m_data);
     }
 
     [[nodiscard]] inline constexpr reference step() noexcept {
-        return m_stride;
+        return std::get<2>(m_data);
     }
 
     [[nodiscard]] inline constexpr const_reference step() const noexcept {
-        return m_stride;
+        return std::get<2>(m_data);
     }
 
     [[nodiscard]] inline constexpr size_type size() const noexcept {
-        return ((m_last - m_first) / m_stride) + 1ul;
+        return ((last() - first()) / step()) + 1ul;
+    }
+
+    friend std::ostream &operator<<(std::ostream &os, basic_slice const &s) {
+        return os << "[ first: " << s.first() << ", last: " << s.last()
+                  << ", step: " << s.step() << " ]";
     }
 
   private:
-    value_type m_first{};
-    value_type m_last{end};
-    value_type m_stride{1};
+    base_type m_data{value_type{}, end, value_type{1}};
 };
 
 using slice = basic_slice<std::size_t>;

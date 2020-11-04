@@ -1,124 +1,143 @@
-#if !defined(AMT_FUNCTIONS_TRANSFORM_HPP)
-#define AMT_FUNCTIONS_TRANSFORM_HPP
+#if !defined(AMT_DATAFRAME_FUNCTIONS_TRANSFORM_HPP)
+#define AMT_DATAFRAME_FUNCTIONS_TRANSFORM_HPP
 
-#include <algorithm>
-#include <core/visit.hpp>
-#include <operator.hpp>
+#include <core/tag.hpp>
+#include <core/utils.hpp>
+#include <traits/frame_traits.hpp>
+#include <traits/series_traits.hpp>
 
-namespace amt::fn {
+namespace amt {
 
-struct transform_fn {
+namespace fn {
 
-    template <typename Fn>
-    inline constexpr decltype(auto) operator()(Box auto &&in, Box auto &out,
-                                               Fn &&fn) const noexcept {
-
-        using storage_type = std::decay_t<decltype(in)>;
-        using type_list = typename storage_type::stored_types;
-
-        visit(in, [&, fn = std::move(fn)](auto &&val) {
-            using type = std::decay_t<decltype(val)>;
-
-            if constexpr (core::is_generic_unary_v<type_list, Fn>) {
-                out = std::move(fn(val));
-            } else {
-                using traits = core::function_traits<Fn>;
-                using param_type =
-                    std::decay_t<typename traits::template arg<0>::type>;
-                using nparam_type = core::norm_type_t<param_type>;
-                if constexpr (std::is_same_v<type, nparam_type>) {
-                    out = std::move(fn(val));
-                }
-            }
-        });
+struct transform_t {
+    template <Series SeriesType1, Series SeriesType2, typename Fn>
+    constexpr SeriesType2 &operator()(SeriesType1 const &in, SeriesType2 &out,
+                                      Fn &&fn) const {
+        out.name(in.name());
+        if constexpr(PureSeries<SeriesType2>){
+            detail::set_dtype(out,in.dtype());
+        }
+        parallel_transform(in.begin(), in.end(), out.begin(),
+                           std::forward<Fn>(fn));
         return out;
     }
 
-    template <Tag T, typename Fn>
-    inline constexpr decltype(auto)
-    operator()(Box auto &&s, [[maybe_unused]] T t, Fn &&fn) const noexcept {
-        using storage_type = std::decay_t<decltype(s)>;
+    template <Series SeriesType1, Series SeriesType2, Series SeriesType3,
+              typename Fn>
+    constexpr SeriesType3 &operator()(SeriesType1 const &in1,
+                                      SeriesType2 const &in2, SeriesType3 &out,
+                                      Fn &&fn) const {
+        out.name(in1.name());
+        if constexpr(PureSeries<SeriesType3>){
+            detail::set_dtype(out,in1.dtype());
+        }
+        parallel_transform(in1.begin(), in1.end(), in2.begin(), out.begin(),
+                           std::forward<Fn>(fn));
+        return out;
+    }
 
-        auto temp = storage_type{};
-        this->operator()(s, temp, std::forward<Fn>(fn));
-        if constexpr (std::is_same_v<T, in_place_t>) {
-            s = std::move(temp);
-            return s;
-        } else {
-            return temp;
+    template <Series SeriesType, typename Fn>
+    constexpr SeriesType operator()(SeriesType const &in, Fn &&fn) const {
+        SeriesType temp(in.size());
+        this->operator()(in, temp, std::forward<Fn>(fn));
+        return temp;
+    }
+
+    template <Series SeriesType, typename Fn>
+    constexpr SeriesType &operator()(SeriesType &in, tag::inplace_t, Fn &&fn) const {
+        this->operator()(in, in, std::forward<Fn>(fn));
+        return in;
+    }
+
+    template <Series SeriesType1, Series SeriesType2, typename Fn>
+    constexpr auto operator()(SeriesType1 const &in1, SeriesType2 const &in2,
+                              Fn &&fn) const {
+        using return_type = series_result_t<SeriesType1, SeriesType2>;
+        return_type temp(in1.size());
+        this->operator()(in1, in2, temp, std::forward<Fn>(fn));
+        return temp;
+    }
+
+    template <Series SeriesType1, Series SeriesType2, typename Fn>
+    constexpr SeriesType1 &operator()(SeriesType1 &in1, SeriesType1 const &in2,
+                                      tag::inplace_t, Fn &&fn) const {
+        this->operator()(in1, in2, in1, std::forward<Fn>(fn));
+        return in1;
+    }
+
+    template <Frame FrameType1, PureFrame FrameType2, typename Fn>
+    constexpr FrameType2 &operator()(FrameType1 const &in, FrameType2 &out,
+                                     Fn &&fn) const {
+        frame_fn(in.begin(), in.end(), out.begin(), std::forward<Fn>(fn));
+        return out;
+    }
+
+    template <Frame FrameType, typename Fn>
+    constexpr FrameType operator()(FrameType const &in, Fn &&fn) const {
+        FrameType temp(in.shape());
+        temp.set_names(in);
+        this->operator()(in, temp, std::forward<Fn>(fn));
+        return temp;
+    }
+
+    template <PureFrame FrameType, typename Fn>
+    constexpr FrameType &operator()(FrameType &in, tag::inplace_t, Fn &&fn) const {
+        frame_fn(in.begin(), in.end(), in.begin(), std::forward<Fn>(fn));
+        return in;
+    }
+
+    template <Frame FrameType1, Frame FrameType2, PureFrame FrameType3,
+              typename Fn>
+    constexpr FrameType3 &operator()(FrameType1 const &in1,
+                                     FrameType2 const &in2, FrameType3 &out,
+                                     Fn &&fn) const {
+
+        frame_fn(in1.begin(), in1.end(), in2.begin(), out.begin(), std::forward<Fn>(fn));
+        return out;
+    }
+
+    template <Frame FrameType1, Frame FrameType2, typename Fn>
+    constexpr auto operator()(FrameType1 const &in1, FrameType2 const &in2,
+                              Fn &&fn) const {
+        using return_type = series_result_t<FrameType1, FrameType2>;
+        return_type temp(in1.shape());
+        temp.set_names(in1);
+        this->operator()(in1, in2, temp, std::forward<Fn>(fn));
+        return temp;
+    }
+
+    template <Frame FrameType1, Frame FrameType2, typename Fn>
+    constexpr FrameType1 &operator()(FrameType1 &in1, FrameType1 const &in2,
+                                     tag::inplace_t, Fn &&fn) const {
+        frame_fn(in1.begin(), in1.end(), in2.begin(), in1.begin(), std::forward<Fn>(fn));
+        return in1;
+    }
+
+  private:
+    template <typename InputIt, typename OutputIt, typename Fn>
+    constexpr void frame_fn(InputIt first, InputIt last, OutputIt out,
+                            Fn &&fn) const {
+        for (; first != last; ++first, ++out) {
+            *out = std::invoke(std::forward<Fn>(fn), *first);
         }
     }
 
-    template <SeriesViewOrSeries S1, Series S2, typename Fn>
-    inline decltype(auto) operator()(S1 const &in, S2 &out,
-                                     Fn &&fn) const noexcept {
-        auto sz = in.size();
+    template <typename InputIt1, typename InputIt2, typename OutputIt,
+              typename Fn>
+    constexpr void frame_fn(InputIt1 f1, InputIt1 l1, InputIt2 f2,
+                                     OutputIt out, Fn &&fn) const {
 
-        if constexpr (!is_view_v<std::decay_t<S2>>) {
-            out.resize(sz);
-        }
-
-        for (auto i = 0ul; i < sz; ++i) {
-            decltype(auto) in_el = in[i];
-            decltype(auto) out_el = out[i];
-            this->operator()(in_el, out_el, std::move(fn));
-        }
-        return static_cast<S2 &>(out);
-    }
-
-    template <Tag T, SeriesViewOrSeries S, typename Fn>
-    inline constexpr decltype(auto) operator()(S &&s, [[maybe_unused]] T t,
-                                               Fn &&fn) const {
-
-        result_type_t<S> temp;
-        this->operator()(std::forward<S>(s), temp, std::forward<Fn>(fn));
-
-        if constexpr (std::is_same_v<T, in_place_t>) {
-            s = std::move(temp);
-            return std::forward<S>(s);
-        } else {
-            return temp;
-        }
-    }
-
-    template <FrameViewOrFrame F1, Frame F2, typename Fn>
-    inline decltype(auto) operator()(F1 const &in, F2 &out,
-                                     Fn &&fn) const noexcept {
-        auto cols = in.cols();
-        auto rows = in.rows();
-        using value_type = typename std::decay_t<F2>::value_type;
-
-        if constexpr (!is_view_v<std::decay_t<F2>>) {
-            out.resize(cols, value_type(rows));
-        }
-
-#pragma omp parallel for schedule(static)
-        for (auto i = 0ul; i < cols; ++i) {
-            for (auto j = 0ul; j < rows; ++j) {
-                decltype(auto) in_el = in[i][j];
-                decltype(auto) out_el = out[i][j];
-                this->operator()(in_el, out_el, std::move(fn));
-            }
-        }
-        return static_cast<F2 &>(out);
-    }
-
-    template <Tag T, FrameViewOrFrame F, typename Fn>
-    inline constexpr decltype(auto) operator()(F &&s, [[maybe_unused]] T t,
-                                               Fn &&fn) const {
-
-        result_type_t<F> temp;
-        this->operator()(std::forward<F>(s), temp, std::forward<Fn>(fn));
-
-        if constexpr (std::is_same_v<T, in_place_t>) {
-            s = std::move(temp);
-            return std::forward<F>(s);
-        } else {
-            return temp;
+        for (; f1 != l1; ++f1, ++f2, ++out) {
+            *out = std::invoke(std::forward<Fn>(fn), *f1, *f2);
         }
     }
 };
 
-} // namespace amt::fn
+} // namespace fn
 
-#endif // AMT_FUNCTIONS_TRANSFORM_HPP
+inline static constexpr auto transform = fn::transform_t{};
+
+} // namespace amt
+
+#endif // AMT_DATAFRAME_FUNCTIONS_TRANSFORM_HPP

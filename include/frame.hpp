@@ -1,353 +1,640 @@
-#if !defined(AMT_FRAME_HPP)
-#define AMT_FRAME_HPP
+#if !defined(AMT_DATAFRAME_FRAME_HPP)
+#define AMT_DATAFRAME_FRAME_HPP
 
-#include <frame_view.hpp>
+#include <frame_utils.hpp>
 #include <series.hpp>
 
 namespace amt {
 
-template <typename... Ts> struct frame {
+namespace arg {
 
-    using base_type = std::vector<series<Ts...>>;
-    using value_type = typename base_type::value_type;
-    using box_type = typename value_type::value_type;
+struct col {
+    constexpr col() noexcept = default;
+    constexpr col(col const &other) noexcept = default;
+    constexpr col(col &&other) noexcept = default;
+    constexpr col &operator=(col const &other) noexcept = default;
+    constexpr col &operator=(col &&other) noexcept = default;
+    constexpr ~col() noexcept = default;
+
+    constexpr col(std::size_t i) noexcept : m_idx(i) {}
+
+    constexpr std::size_t operator()() const noexcept { return m_idx; }
+
+  private:
+    std::size_t m_idx{};
+};
+
+struct row {
+    constexpr row() noexcept = default;
+    constexpr row(row const &other) noexcept = default;
+    constexpr row(row &&other) noexcept = default;
+    constexpr row &operator=(row const &other) noexcept = default;
+    constexpr row &operator=(row &&other) noexcept = default;
+    constexpr ~row() noexcept = default;
+
+    constexpr row(std::size_t i) noexcept : m_idx(i) {}
+
+    constexpr std::size_t operator()() const noexcept { return m_idx; }
+
+  private:
+    std::size_t m_idx{};
+};
+
+} // namespace arg
+
+// Stores data in column major
+template <Box BoxType> struct basic_frame {
+
+    using box_type = BoxType;
+    using value_type = basic_series<box_type>;
+    using name_type = typename value_type::name_type;
+    using base_type = std::vector<value_type>;
     using size_type = typename base_type::size_type;
-    using reference = typename base_type::reference;
-    using const_reference = typename base_type::const_reference;
-    using pointer = typename base_type::pointer;
-    using const_pointer = typename base_type::const_pointer;
     using iterator = typename base_type::iterator;
     using const_iterator = typename base_type::const_iterator;
     using reverse_iterator = typename base_type::reverse_iterator;
     using const_reverse_iterator = typename base_type::const_reverse_iterator;
+    using reference = typename base_type::reference;
+    using const_reference = typename base_type::const_reference;
+    using pointer = typename base_type::pointer;
+    using const_pointer = typename base_type::const_pointer;
+    using slice_type = basic_slice<size_type>;
+    using shape_type = std::pair<size_type, size_type>;
+    using row_view_type = basic_row_view<value_type>;
+    using const_row_view_type = basic_row_view<value_type const>;
+    using col_view_type = basic_column_view<box_type>;
+    using const_col_view_type = basic_column_view<box_type const>;
 
-    constexpr frame() noexcept = default;
-    constexpr frame(frame const &other) : m_data(other.m_data) {}
+    constexpr basic_frame() = default;
+    constexpr basic_frame(basic_frame const &other) = default;
+    constexpr basic_frame(basic_frame &&other) = default;
+    constexpr basic_frame &operator=(basic_frame const &other) = default;
+    constexpr basic_frame &operator=(basic_frame &&other) = default;
+    constexpr ~basic_frame() = default;
 
-    constexpr frame(frame &&other) : m_data(std::move(other.m_data)) {}
+    constexpr basic_frame(size_type cols) : m_data(cols) {}
 
-    constexpr frame &operator=(frame const &other) = default;
-    constexpr frame &operator=(frame &&other) noexcept = default;
-
-    ~frame() = default;
-
-    constexpr frame(size_type col, size_type row)
-        : m_data(col, value_type(row)) {
-        generate_name(0ul);
+    constexpr basic_frame(size_type cols, size_type rows)
+        : m_data(cols, value_type(rows)) {
+        generate_name();
     }
 
-    constexpr frame(size_type sz) : m_data(sz) { generate_name(0ul); }
+    constexpr basic_frame(shape_type s)
+        : basic_frame(std::get<0>(s), std::get<1>(s)) {}
 
-    constexpr frame(size_type sz, size_type row, box_type val)
-        : m_data(sz, value_type(row, std::move(val))) {
-        generate_name(0ul);
+    constexpr basic_frame(size_type cols, size_type rows, DType auto dtype)
+        : m_data(cols, value_type(rows, dtype)) {
+        generate_name();
     }
 
-    constexpr frame(size_type sz, value_type val) : m_data(sz, std::move(val)) {
-        generate_name(0ul);
+    template <typename U>
+    requires(std::is_constructible_v<box_type, U> &&
+             !DType<U>) constexpr basic_frame(size_type cols, size_type rows,
+                                              U u, DType auto dtype)
+        : m_data(cols, value_type(rows, std::move(u), dtype)) {
+        generate_name();
     }
 
-    frame(std::vector<value_type> v) : m_data(std::move(v)) {
-        generate_name(0ul);
-        for (auto i = 0ul; i < cols(); ++i) {
-            if (m_data[i].size() != rows()) {
-                throw std::runtime_error(
-                    "amt::frame(std::vector<std::pair<std::string_view, "
-                    "value_type>>) : "
-                    "all the cols should have same number of rows");
-            }
+    template <typename U>
+    requires(std::is_constructible_v<box_type, U> &&
+             !DType<U>) constexpr basic_frame(shape_type s, U u,
+                                              DType auto dtype)
+        : basic_frame(std::get<0>(s), std::get<1>(s), std::move(u), dtype) {}
+
+    template <typename U>
+    requires(std::is_constructible_v<box_type, U> &&
+             !DType<U>) constexpr basic_frame(shape_type s, U u)
+        : basic_frame(std::get<0>(s), std::get<1>(s), std::move(u)) {}
+
+    template <typename U>
+    requires(std::is_constructible_v<box_type, U> &&
+             !DType<U>) constexpr basic_frame(size_type cols, size_type rows,
+                                              U u)
+        : m_data(cols, value_type(rows, std::move(u))) {
+        generate_name();
+    }
+
+    constexpr basic_frame(shape_type s, DType auto dtype)
+        : basic_frame(std::get<0>(s), std::get<1>(s), dtype) {}
+
+    constexpr basic_frame(size_type cols, value_type val)
+        : m_data(cols, std::move(val)) {}
+
+    constexpr basic_frame(std::initializer_list<value_type> li)
+        : m_data(std::move(li)) {
+        if (!all_cols_have_same_rows()) {
+            throw std::length_error(
+                ERR_CSTR("amt::basic_frame(std::initializer_list<value_type>) "
+                         ": all cols should have same number of rows"));
         }
     }
 
-    frame(std::initializer_list<value_type> li)
-        : frame(std::move(std::vector<value_type>(std::move(li)))) {}
+    constexpr basic_frame(base_type li) : m_data(std::move(li)) {}
 
-    template <typename U> frame(result<U> const &r) {
-        if (!r) {
-            throw std::runtime_error(r.what());
+    constexpr iterator col_insert(const_iterator pos, value_type u) {
+        if (!empty() && u.size() != rows()) {
+            throw std::length_error(
+                ERR_CSTR("amt::basic_frame::insert(const_iterator, value_type) "
+                         ": rows mismatch"));
         }
-        auto temp = frame(*r);
-        swap(temp,*this);
+        return m_data.insert(pos, std::move(u));
     }
 
-    template <typename U> frame(result<U> &&r) {
-        if (!r) {
-            throw std::runtime_error(r.what());
-        }
-        auto temp = frame(std::move(*r));
-        swap(temp,*this);
+    constexpr iterator insert(const_iterator pos, value_type u, tag::col_t) {
+        return col_insert(pos, std::move(u));
     }
 
-    frame(FrameView auto &&fv) : frame(fv.rows(), fv.cols()) {
+    template <typename InputIt>
+    constexpr iterator insert(const_iterator pos, InputIt first, InputIt last,
+                              tag::col_t) {
+        return col_insert(pos, first, last);
+    }
 
-#pragma omp parallel for schedule(static)
-        for (auto i = 0ul; i < fv.cols(); ++i) {
-            for (auto j = 0ul; j < fv.rows(); ++j) {
-                m_data[i][j] = fv[i][j];
-            }
+    template <typename InputIt>
+    constexpr iterator insert(size_type pos, InputIt first, InputIt last,
+                              tag::col_t) {
+        return col_insert(pos, first, last);
+    }
+
+    template <typename InputIt>
+    constexpr void insert(size_type pos, InputIt first, InputIt last,
+                          tag::row_t) {
+        return row_insert(pos, first, last);
+    }
+
+    template <typename InputIt>
+    constexpr iterator col_insert(size_type pos, InputIt first, InputIt last) {
+        return col_insert(begin() + pos, first, last);
+    }
+
+    template <typename InputIt>
+    constexpr iterator col_insert(const_iterator pos, InputIt first,
+                                  InputIt last) {
+        if (!empty() &&
+            static_cast<size_type>(std::distance(first, last)) != rows()) {
+            throw std::length_error(
+                ERR_CSTR("amt::basic_frame::col_insert(const_iterator, "
+                         "InputIt, InputIt) : rows mismatch"));
+        }
+        return m_data.insert(pos, first, last);
+    }
+
+    template <typename InputIt>
+    constexpr void row_insert(size_type pos, InputIt first, InputIt last) {
+        if (static_cast<size_type>(std::distance(first, last)) != cols()) {
+            throw std::length_error(
+                ERR_CSTR("amt::basic_frame::row_insert(size_type, InputIt, "
+                         "InputIt) : column size mismatch"));
+        }
+        for (auto &el : m_data) {
+            el.insert(el.begin() + pos, first, first + 1);
+            ++first;
         }
     }
 
-    constexpr reference operator[](size_type k) noexcept { return m_data[k]; }
+    template <typename T>
+    constexpr iterator insert(size_type pos, std::initializer_list<T> li,
+                              tag::col_t) {
+        return col_insert(pos, std::move(li));
+    }
 
-    constexpr const_reference operator[](size_type k) const noexcept {
+    template <typename T>
+    constexpr iterator insert(size_type pos, std::initializer_list<T> li,
+                              tag::row_t) {
+        return row_insert(pos, std::move(li));
+    }
+
+    template <typename T>
+    constexpr iterator insert(const_iterator pos, std::initializer_list<T> li,
+                              tag::col_t) {
+        return col_insert(pos, std::move(li));
+    }
+
+    template <typename T>
+    constexpr void row_insert(size_type pos, std::initializer_list<T> li) {
+        if (li.size() != cols()) {
+            throw std::length_error(
+                ERR_CSTR("amt::basic_frame::row_insert(size_type, "
+                         "std::initializer_list<T> "
+                         ") : column size mismatch"));
+        }
+        auto first = li.begin();
+        for (auto &el : m_data) {
+            el.insert(el.begin() + pos, std::move(*first));
+            ++first;
+        }
+    }
+
+    template <typename T>
+    constexpr iterator col_insert(size_type pos, std::initializer_list<T> li) {
+        return col_insert(begin() + pos, std::move(li));
+    }
+
+    template <typename T>
+    constexpr iterator col_insert(const_iterator pos,
+                                  std::initializer_list<T> li) {
+        if (!empty() && li.size() != rows()) {
+            throw std::length_error(
+                ERR_CSTR("amt::basic_frame::col_insert(const_iterator, "
+                         "std::initializer_list<T>) : rows mismatch"));
+        }
+        return m_data.insert(pos, std::move(li));
+    }
+
+    constexpr iterator erase(const_iterator pos, tag::col_t) { col_erase(pos); }
+
+    constexpr iterator erase(size_type pos, tag::col_t) { col_erase(pos); }
+
+    constexpr void erase(size_type pos, tag::row_t) { row_erase(pos); }
+
+    constexpr iterator col_erase(const_iterator pos) { m_data.erase(pos); }
+
+    constexpr iterator col_erase(size_type pos) { m_data.erase(begin() + pos); }
+
+    constexpr void row_erase(size_type pos) {
+        for (auto &el : m_data) {
+            el.erase(el.begin() + pos);
+        }
+    }
+
+    constexpr iterator erase(const_iterator first, const_iterator last,
+                             tag::col_t) {
+        col_erase(first, last);
+    }
+
+    constexpr iterator erase(size_type first, size_type last, tag::col_t) {
+        col_erase(first, last);
+    }
+
+    constexpr iterator erase(const_iterator first, const_iterator last,
+                             tag::row_t) {
+        row_erase(first, last);
+    }
+
+    constexpr iterator col_erase(size_type first, size_type last) {
+        col_erase(begin() + first, begin() + last);
+    }
+
+    constexpr iterator col_erase(const_iterator first, const_iterator last) {
+        m_data.erase(first, last);
+    }
+
+    constexpr void row_erase(size_type first, size_type last) {
+        for (auto &el : m_data) {
+            el.erase(el.begin() + first, el.begin() + last);
+        }
+    }
+
+    constexpr void pop_back(tag::col_t) { m_data.col_pop_back(); }
+    constexpr void pop_back(tag::row_t) { m_data.row_pop_back(); }
+
+    constexpr void col_pop_back() { m_data.pop_back(); }
+
+    constexpr void row_pop_back() {
+        if (empty())
+            return;
+        for (auto &el : m_data) {
+            el.pop_back();
+        }
+    }
+
+    constexpr void push_back(Series auto u, tag::col_t) {
+        col_push_back(std::move(u));
+    }
+    constexpr void push_back(Series auto u, tag::row_t) {
+        row_push_back(std::move(u));
+    }
+
+    constexpr void col_push_back(Series auto u) {
+        if (!empty() && u.size() != rows()) {
+            throw std::length_error(ERR_CSTR("amt::basic_frame::col_push_back("
+                                             "Series auto) : rows mismatch"));
+        }
+        m_data.push_back(std::move(u));
+    }
+
+    constexpr void row_push_back(Series auto u) {
+        if (empty()) {
+            resize(u.size());
+        }
+        if (cols() != u.size()) {
+            throw std::length_error(ERR_CSTR(
+                "amt::basic_frame::row_push_back(Series auto) : column "
+                "size mismatch"));
+        }
+        for (auto i = 0u; i < cols(); ++i) {
+            m_data[i].push_back(std::move(u[i]));
+        }
+    }
+
+    constexpr void resize(size_type sz, value_type u) {
+        m_data.resize(sz, std::move(u));
+    }
+
+    constexpr void resize(size_type cols, size_type rows, box_type b) {
+        m_data.resize(cols, value_type(rows, b));
+        for (auto i = 0u; i < cols; ++i)
+            m_data[i].resize(rows, std::move(b));
+    }
+
+    constexpr void resize(size_type cols, size_type rows) {
+        m_data.resize(cols, value_type(rows));
+        for (auto i = 0u; i < cols; ++i)
+            m_data[i].resize(rows);
+    }
+
+    constexpr void resize(shape_type s, box_type b) {
+        resize(std::get<0>(s), std::get<1>(s), std::move(b));
+    }
+
+    constexpr void resize(shape_type s) {
+        resize(std::get<0>(s), std::get<1>(s));
+    }
+
+    constexpr void reserve(size_type cols, size_type rows) {
+        m_data.reserve(cols);
+        for (auto i = 0u; i < cols; ++i)
+            m_data[i].reserve(rows);
+    }
+
+    constexpr void reserve(shape_type s) {
+        reserve(std::get<0>(s), std::get<1>(s));
+    }
+
+    constexpr void resize(size_type sz) { m_data.resize(sz); }
+
+    constexpr void reserve(size_type sz) { m_data.reserve(sz); }
+
+    constexpr void clear() { m_data.clear(); }
+
+    constexpr reference back() { return m_data.back(); }
+
+    constexpr const_reference back() const { return m_data.back(); }
+
+    constexpr shape_type shape() const noexcept { return {cols(), rows()}; }
+
+    constexpr bool empty() const noexcept { return m_data.empty(); }
+
+    constexpr size_type size() const noexcept { return m_data.size(); }
+
+    constexpr size_type cols() const noexcept { return m_data.size(); }
+
+    constexpr pointer data() noexcept { return m_data.data(); }
+
+    constexpr const_pointer data() const noexcept { return m_data.data(); }
+
+    constexpr size_type rows() const noexcept {
+        return empty() ? 0u : m_data[0].size();
+    }
+
+    constexpr void dtype(size_type k, DType auto d) { m_data[k].dtype(d); }
+
+    constexpr void dtype(DType auto d) {
+        for (auto i = 0u; i < cols(); ++i) {
+            dtype(d);
+        }
+    }
+
+    constexpr ::amt::dtype<> dtype(size_type k) const {
+        return m_data[k].dtype();
+    }
+
+    constexpr reference operator[](size_type k) { return m_data[k]; }
+
+    constexpr const_reference operator[](size_type k) const {
         return m_data[k];
     }
 
-    constexpr reference operator[](std::string_view k) {
-        return m_data[index(k)];
+    constexpr auto operator()(arg::col k) { return get_col(k()); }
+
+    constexpr auto operator()(arg::col k) const { return get_col(k()); }
+
+    constexpr auto operator()(arg::row k) { return get_row(k()); }
+
+    constexpr auto operator()(arg::row k) const { return get_row(k()); }
+
+    constexpr auto operator()(size_type k, tag::col_t) { return get_col(k); }
+
+    constexpr auto operator()(size_type k, tag::col_t) const {
+        return get_col(k);
     }
 
-    constexpr const_reference operator[](std::string_view k) const {
-        return m_data[index(k)];
+    constexpr auto operator()(size_type k, tag::row_t) { return get_row(k); }
+
+    constexpr auto operator()(size_type k, tag::row_t) const {
+        return get_row(k);
+    }
+
+    constexpr col_view_type get_col(size_type k) { return m_data[k](); }
+
+    constexpr const_col_view_type get_col(size_type k) const {
+        return m_data[k]();
+    }
+
+    constexpr row_view_type get_row(size_type k) {
+        return {m_data.data(), k, cols()};
+    }
+
+    constexpr const_row_view_type get_row(size_type k) const {
+        return {m_data.data(), k, cols()};
+    }
+
+    constexpr box_type &operator()(size_type c, size_type r) {
+        return m_data[c][r];
+    }
+
+    constexpr box_type const &operator()(size_type c, size_type r) const {
+        return m_data[c][r];
     }
 
     constexpr reference at(size_type k) { return m_data.at(k); }
 
     constexpr const_reference at(size_type k) const { return m_data.at(k); }
 
-    constexpr reference at(std::string_view k) { return m_data.at(index(k)); }
-
-    constexpr const_reference at(std::string_view k) const {
-        return m_data.at(index(k));
-    }
-
-    constexpr auto &at(size_type c, size_type r) { return m_data.at(c).at(r); }
-
-    constexpr auto const &at(size_type c, size_type r) const {
+    constexpr box_type &at(size_type c, size_type r) {
         return m_data.at(c).at(r);
     }
 
-    constexpr auto &at(std::string_view k, size_type r) {
-        return m_data.at(index(k)).at(r);
+    constexpr box_type const &at(size_type c, size_type r) const {
+        return m_data.at(c).at(r);
     }
 
-    constexpr auto const &at(std::string_view k, size_type r) const {
-        return m_data.at(index(k)).at(r);
+    std::vector<::amt::dtype<>> vdtype() const {
+        std::vector<::amt::dtype<>> temp(cols());
+        for (auto i = 0u; i < temp.size(); ++i)
+            temp[i] = dtype(i);
+        return temp;
     }
 
-    [[nodiscard]] inline constexpr size_type cols() const noexcept {
-        return m_data.size();
+    constexpr void set_dtype(std::vector<::amt::dtype<>> const &v) const {
+        for (auto i = 0u; i < v.size(); ++i)
+            dtype(i, v[i]);
     }
 
-    [[nodiscard]] inline constexpr size_type rows() const noexcept {
-        return empty() ? 0ul : m_data[0].size();
+    constexpr void set_dtype(Frame auto &&f) {
+        for (auto i = 0u; i < f.cols(); ++i)
+            dtype(i, f.dtype(i));
     }
 
-    [[nodiscard]] inline constexpr bool empty() const noexcept {
-        return m_data.empty();
-    }
-
-    [[nodiscard]] inline std::string const &name(size_type k) const {
-        if (k >= cols()) {
-            throw std::out_of_range("amt::frame::name(size_type)");
-        }
+    constexpr std::string_view name(size_type k) const {
         return m_data[k].name();
     }
 
-    [[nodiscard]] inline std::string &name(size_type k) {
-        if (k >= cols()) {
-            throw std::out_of_range("amt::frame::name(size_type)");
-        }
-        return m_data[k].name();
+    constexpr void name(size_type k, std::string_view name) const {
+        return m_data[k].name(name);
     }
 
-    [[nodiscard]] inline std::vector<std::string> names_to_vector() const {
-        std::vector<std::string> temp(cols());
-        auto i = 0ul;
+    constexpr iterator begin() { return m_data.begin(); }
+
+    constexpr iterator end() { return m_data.end(); }
+
+    constexpr const_iterator begin() const { return m_data.begin(); }
+
+    constexpr const_iterator end() const { return m_data.end(); }
+
+    constexpr reverse_iterator rbegin() { return m_data.rbegin(); }
+
+    constexpr reverse_iterator rend() { return m_data.rend(); }
+
+    constexpr const_reverse_iterator rbegin() const { return m_data.rbegin(); }
+
+    constexpr const_reverse_iterator rend() const { return m_data.rend(); }
+
+    name_list vnames() const {
+        name_list temp;
+        temp.reserve(cols());
         for (auto const &el : m_data) {
-            temp[i++] = el.name();
+            temp.push_back(el.name());
         }
         return temp;
     }
 
-    inline void set_name(std::vector<std::string> v) {
-        if (v.size() != cols()) {
-            throw std::runtime_error(
-                "amt::frame::set_name(std::vector<std::string>) : "
-                "size mismatch");
-        }
-        for (auto i = 0ul; i < v.size(); ++i) {
-            m_data[i].name() = std::move(v[i]);
+    void set_names(name_list vec) {
+        auto sz = std::min(vec.size(), cols());
+        for (auto i = 0u; i < sz; ++i) {
+            m_data[i].name(std::move(vec[i]));
         }
     }
 
-    [[nodiscard]] inline size_type index(std::string_view s) const {
-        auto i = 0ul;
-        for (auto const &el : *this) {
-            if (el.name() == s)
-                return i;
-            ++i;
+    void set_names(Frame auto &&f) {
+        auto sz = std::min(f.cols(), cols());
+        for (auto i = 0u; i < sz; ++i) {
+            m_data[i].name(f.name(i));
         }
-        throw std::runtime_error("amt::frame::index(std::string_view): "
-                                 "name not found");
-    }
-
-    inline void replace(size_type k, std::string_view name) {
-        m_data[k].name() = std::move(name);
-    }
-
-    inline void reset_name() {
-        std::for_each(m_data.begin(), m_data.end(),
-                      [](auto &el) { el.name().clear(); });
-        generate_name(0ul);
-    }
-
-    [[nodiscard]] inline constexpr reference back() { return m_data.back(); }
-
-    [[nodiscard]] inline constexpr const_reference back() const {
-        return m_data.back();
-    }
-
-    [[nodiscard]] inline constexpr pointer data() noexcept {
-        return m_data.data();
-    }
-
-    [[nodiscard]] inline constexpr const_pointer data() const noexcept {
-        return m_data.data();
-    }
-
-    template <typename... Args>
-    [[nodiscard]] inline constexpr decltype(auto) operator()(Args &&... args) {
-        return at(std::forward<Args>(args)...);
-    }
-
-    template <typename... Args>
-    [[nodiscard]] inline constexpr decltype(auto)
-    operator()(Args &&... args) const {
-        return at(std::forward<Args>(args)...);
-    }
-
-    template <typename T>
-    [[nodiscard]] inline constexpr view<frame, false>
-    operator()(basic_slice<T> fslice, basic_slice<T> sslice = {}) {
-        return {*this, std::move(fslice), std::move(sslice)};
-    }
-
-    template <typename T>
-    [[nodiscard]] inline constexpr view<frame, true>
-    operator()(basic_slice<T> fslice, basic_slice<T> sslice = {}) const {
-        return {*this, std::move(fslice), std::move(sslice)};
-    }
-
-    template <typename T>
-    [[nodiscard]] inline constexpr view<frame, false> operator()() {
-        return {*this};
-    }
-
-    template <typename T>
-    [[nodiscard]] inline constexpr view<frame, true> operator()() const {
-        return {*this};
-    }
-
-    void push_back(frame f) {
-        for (auto i = 0ul; i < f.cols(); ++i) {
-            m_data.push_back(std::move(f[i]));
-        }
-    }
-
-    [[nodiscard]] inline constexpr iterator begin() noexcept {
-        return m_data.begin();
-    }
-
-    [[nodiscard]] inline constexpr iterator end() noexcept {
-        return m_data.end();
-    }
-
-    [[nodiscard]] inline constexpr const_iterator begin() const noexcept {
-        return m_data.begin();
-    }
-
-    [[nodiscard]] inline constexpr const_iterator end() const noexcept {
-        return m_data.end();
-    }
-
-    [[nodiscard]] inline constexpr reverse_iterator rbegin() noexcept {
-        return m_data.rbegin();
-    }
-
-    [[nodiscard]] inline constexpr reverse_iterator rend() noexcept {
-        return m_data.rend();
-    }
-
-    [[nodiscard]] inline constexpr const_reverse_iterator
-    rbegin() const noexcept {
-        return m_data.rbegin();
-    }
-
-    [[nodiscard]] inline constexpr const_reverse_iterator
-    rend() const noexcept {
-        return m_data.rend();
-    }
-
-    inline void reset_names() noexcept {
-        for (auto i = 0ul; i < m_data.size(); ++i)
-            m_data[i] = std::to_string(i);
-    }
-
-    inline iterator erase(iterator pos) { return m_data.erase(pos); }
-
-    inline iterator erase(const_iterator pos) { return m_data.erase(pos); }
-
-    inline iterator erase(size_type pos) {
-        return erase(m_data.begin() +
-                     static_cast<typename iterator::difference_type>(pos));
-    }
-
-    inline void erase_row(size_type k) {
-        for (auto i = 0ul; i < cols(); ++i) {
-            m_data[i].erase(static_cast<typename iterator::difference_type>(k));
-        }
-    }
-
-    [[nodiscard]] inline iterator erase(iterator first, iterator last) {
-        return m_data.erase(first, last);
-    }
-
-    [[nodiscard]] inline iterator erase(const_iterator first,
-                                        const_iterator last) {
-        return m_data.erase(first, last);
-    }
-
-    inline void clear() { m_data.clear(); }
-
-    inline void resize(size_type sz) {
-        auto prev_size = m_data.size();
-        m_data.resize(sz);
-        generate_name(prev_size);
-    }
-
-    inline void resize(size_type cols, size_type rows) {
-        auto prev_size = m_data.size();
-        m_data.resize(cols, value_type(rows));
-        generate_name(prev_size);
-    }
-
-    inline constexpr void reserve(size_type cap) { m_data.reserve(cap); }
-
-    inline void resize(size_type sz, value_type val) {
-        auto prev_size = m_data.size();
-        m_data.resize(sz, std::move(val));
-        generate_name(prev_size);
-    }
-
-    friend void swap(frame &LHS, frame &RHS) {
-        std::swap(LHS.m_data, RHS.m_data);
     }
 
   private:
-    constexpr void generate_name(size_type i) {
-        for (auto j = i; j < m_data.size(); ++j) {
-            auto &n = m_data[j].name();
-            if (n.empty())
-                n = std::to_string(j);
+    void generate_name() {
+        for (auto i = 0u; i < cols(); ++i) {
+            m_data[i].name(std::to_string(i));
         }
-    };
+    }
+
+    constexpr bool all_cols_have_same_rows() const noexcept {
+        auto sz = rows();
+        for (auto i = 1u; i < cols(); ++i) {
+            if (sz != m_data[i].size())
+                return false;
+        }
+        return true;
+    }
 
   private:
     base_type m_data;
 };
 
+using frame = basic_frame<box>;
+
 } // namespace amt
 
-#endif // AMT_FRAME_HPP
+std::ostream &operator<<(std::ostream &os, amt::Frame auto &&f) {
+    if (f.empty()) {
+        return os << "{ }";
+    } else {
+        os << "{\n";
+        for (auto const &el : f) {
+            os << "    " << el << '\n';
+        }
+        os << "}";
+    }
+    return os;
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator==(FrameLHS const &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator==(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+
+    using return_type = amt::frame_result_t<FrameLHS, FrameRHS>;
+    return_type ret(lhs.shape(), amt::dtype<bool>());
+    ret.set_names(lhs);
+    for (auto i = 0u; i < lhs.cols(); ++i) {
+        ret[i] = std::move(lhs[i] == rhs[i]);
+    }
+    return ret;
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator!=(FrameLHS const &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator!=(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+
+    using return_type = amt::frame_result_t<FrameLHS, FrameRHS>;
+    return_type ret(lhs.shape(), amt::dtype<bool>());
+    for (auto i = 0u; i < lhs.cols(); ++i) {
+        ret[i] = std::move(lhs[i] != rhs[i]);
+    }
+    return ret;
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator<(FrameLHS const &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() < lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator<(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+
+    using return_type = amt::frame_result_t<FrameLHS, FrameRHS>;
+    return_type ret(lhs.shape(), amt::dtype<bool>());
+    for (auto i = 0u; i < lhs.cols(); ++i) {
+        ret[i] = std::move(lhs[i] < rhs[i]);
+    }
+    return ret;
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator>(FrameLHS const &lhs, FrameRHS const &rhs) {
+    return rhs < lhs;
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator<=(FrameLHS const &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() < lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator<=(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+
+    using return_type = amt::frame_result_t<FrameLHS, FrameRHS>;
+    return_type ret(lhs.shape(), amt::dtype<bool>());
+    for (auto i = 0u; i < lhs.cols(); ++i) {
+        ret[i] = std::move(lhs[i] <= rhs[i]);
+    }
+    return ret;
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator>=(FrameLHS const &lhs, FrameRHS const &rhs) {
+    return rhs <= lhs;
+}
+
+#endif // AMT_DATAFRAME_FRAME_HPP
