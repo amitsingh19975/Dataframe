@@ -158,6 +158,14 @@ template <typename T> struct basic_slice {
         return ((last() - first()) / step()) + 1ul;
     }
 
+    constexpr basic_slice operator()(basic_slice const& rhs) const noexcept{
+        return {
+            rhs.first() * step() + first(),
+            rhs.last() * step() + first(),
+            rhs.step() * step(),
+        };
+    }
+
     friend std::ostream &operator<<(std::ostream &os, basic_slice const &s) {
         return os << "[ first: " << s.first() << ", last: " << s.last()
                   << ", step: " << s.step() << " ]";

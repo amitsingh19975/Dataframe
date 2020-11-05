@@ -5,6 +5,7 @@
 #include <functional>
 #include <traits/frame_traits.hpp>
 #include <traits/series_traits.hpp>
+#include <series_utils.hpp>
 
 namespace amt {
 

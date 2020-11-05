@@ -3,47 +3,12 @@
 
 #include <frame_utils.hpp>
 #include <series.hpp>
+#include <frame_view.hpp>
 
 namespace amt {
 
-namespace arg {
-
-struct col {
-    constexpr col() noexcept = default;
-    constexpr col(col const &other) noexcept = default;
-    constexpr col(col &&other) noexcept = default;
-    constexpr col &operator=(col const &other) noexcept = default;
-    constexpr col &operator=(col &&other) noexcept = default;
-    constexpr ~col() noexcept = default;
-
-    constexpr col(std::size_t i) noexcept : m_idx(i) {}
-
-    constexpr std::size_t operator()() const noexcept { return m_idx; }
-
-  private:
-    std::size_t m_idx{};
-};
-
-struct row {
-    constexpr row() noexcept = default;
-    constexpr row(row const &other) noexcept = default;
-    constexpr row(row &&other) noexcept = default;
-    constexpr row &operator=(row const &other) noexcept = default;
-    constexpr row &operator=(row &&other) noexcept = default;
-    constexpr ~row() noexcept = default;
-
-    constexpr row(std::size_t i) noexcept : m_idx(i) {}
-
-    constexpr std::size_t operator()() const noexcept { return m_idx; }
-
-  private:
-    std::size_t m_idx{};
-};
-
-} // namespace arg
-
 // Stores data in column major
-template <Box BoxType> struct basic_frame {
+template <Box BoxType> struct basic_frame<BoxType> {
 
     using box_type = BoxType;
     using value_type = basic_series<box_type>;
@@ -64,6 +29,8 @@ template <Box BoxType> struct basic_frame {
     using const_row_view_type = basic_row_view<value_type const>;
     using col_view_type = basic_column_view<box_type>;
     using const_col_view_type = basic_column_view<box_type const>;
+    using frame_view_type = basic_frame_view<value_type>;
+    using const_frame_view_type = basic_frame_view<value_type const>;
 
     constexpr basic_frame() = default;
     constexpr basic_frame(basic_frame const &other) = default;
@@ -73,6 +40,12 @@ template <Box BoxType> struct basic_frame {
     constexpr ~basic_frame() = default;
 
     constexpr basic_frame(size_type cols) : m_data(cols) {}
+    
+    template<FrameView FrameType>
+    requires(is_frame_same_v<FrameType, basic_frame>)
+    constexpr basic_frame(FrameType&& fv) : basic_frame(fv.shape()){
+        std::copy(fv.begin(), fv.end(), begin());
+    }
 
     constexpr basic_frame(size_type cols, size_type rows)
         : m_data(cols, value_type(rows)) {
@@ -500,6 +473,14 @@ template <Box BoxType> struct basic_frame {
 
     constexpr const_reverse_iterator rend() const { return m_data.rend(); }
 
+    constexpr frame_view_type operator()(slice_type col_slice = {}, slice_type row_slice = {}) { 
+        return {data(), cols(), rows(), std::move(col_slice), std::move(row_slice)};
+    }
+
+    constexpr const_frame_view_type operator()(slice_type col_slice = {}, slice_type row_slice = {}) const { 
+        return {data(), cols(), rows(), std::move(col_slice), std::move(row_slice)};
+    }
+
     name_list vnames() const {
         name_list temp;
         temp.reserve(cols());
@@ -596,7 +577,7 @@ operator!=(FrameLHS const &lhs, FrameRHS const &rhs) {
 template <amt::Frame FrameLHS, amt::Frame FrameRHS>
 constexpr amt::frame_result_t<FrameLHS, FrameRHS>
 operator<(FrameLHS const &lhs, FrameRHS const &rhs) {
-    if (rhs.shape() < lhs.shape()) {
+    if (rhs.shape() != lhs.shape()) {
         throw std::runtime_error(ERR_CSTR(
             "operator<(FrameLHS const&, FrameRHS const&) : size mismatch"));
     }
@@ -618,7 +599,7 @@ operator>(FrameLHS const &lhs, FrameRHS const &rhs) {
 template <amt::Frame FrameLHS, amt::Frame FrameRHS>
 constexpr amt::frame_result_t<FrameLHS, FrameRHS>
 operator<=(FrameLHS const &lhs, FrameRHS const &rhs) {
-    if (rhs.shape() < lhs.shape()) {
+    if (rhs.shape() != lhs.shape()) {
         throw std::runtime_error(ERR_CSTR(
             "operator<=(FrameLHS const&, FrameRHS const&) : size mismatch"));
     }
@@ -635,6 +616,214 @@ template <amt::Frame FrameLHS, amt::Frame FrameRHS>
 constexpr amt::frame_result_t<FrameLHS, FrameRHS>
 operator>=(FrameLHS const &lhs, FrameRHS const &rhs) {
     return rhs <= lhs;
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator+(FrameLHS const &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator+(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+    amt::frame_result_t<FrameLHS, FrameRHS> res(rhs.cols());
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        res[i] = rhs[i] + lhs[i];
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator-(FrameLHS const &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator-(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+    amt::frame_result_t<FrameLHS, FrameRHS> res(rhs.cols());
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        res[i] = rhs[i] - lhs[i];
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator*(FrameLHS const &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator*(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+    amt::frame_result_t<FrameLHS, FrameRHS> res(rhs.cols());
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        res[i] = rhs[i] * lhs[i];
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator/(FrameLHS const &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator/(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+    amt::frame_result_t<FrameLHS, FrameRHS> res(rhs.cols());
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        res[i] = rhs[i] / lhs[i];
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator+=(FrameLHS &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator+=(FrameLHS &, FrameRHS const&) : size mismatch"));
+    }
+
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        rhs[i] += lhs[i];
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator-=(FrameLHS &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator-=(FrameLHS &, FrameRHS const&) : size mismatch"));
+    }
+
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        rhs[i] -= lhs[i];
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator*=(FrameLHS &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator*=(FrameLHS &, FrameRHS const&) : size mismatch"));
+    }
+
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        rhs[i] *= lhs[i];
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator/=(FrameLHS &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator/=(FrameLHS &, FrameRHS const&) : size mismatch"));
+    }
+
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        rhs[i] /= lhs[i];
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator&&(FrameLHS const &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator&&(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+    amt::frame_result_t<FrameLHS, FrameRHS> res(rhs.cols());
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        res[i] = ( rhs[i] && lhs[i] );
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator||(FrameLHS const &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator||(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+    amt::frame_result_t<FrameLHS, FrameRHS> res(rhs.cols());
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        res[i] = ( rhs[i] || lhs[i] );
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator&(FrameLHS const &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator&(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+    amt::frame_result_t<FrameLHS, FrameRHS> res(rhs.cols());
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        res[i] = ( rhs[i] & lhs[i] );
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator^(FrameLHS const &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator^(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+    amt::frame_result_t<FrameLHS, FrameRHS> res(rhs.cols());
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        res[i] = ( rhs[i] ^ lhs[i] );
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator|(FrameLHS const &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator|(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+    amt::frame_result_t<FrameLHS, FrameRHS> res(rhs.cols());
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        res[i] = ( rhs[i] | lhs[i] );
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator&=(FrameLHS &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator&=(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+    amt::frame_result_t<FrameLHS, FrameRHS> res(rhs.cols());
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        rhs[i] &= lhs[i];
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator^=(FrameLHS &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator^=(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+    amt::frame_result_t<FrameLHS, FrameRHS> res(rhs.cols());
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        rhs[i] ^= lhs[i];
+    }
+}
+
+template <amt::Frame FrameLHS, amt::Frame FrameRHS>
+constexpr amt::frame_result_t<FrameLHS, FrameRHS>
+operator|=(FrameLHS &lhs, FrameRHS const &rhs) {
+    if (rhs.shape() != lhs.shape()) {
+        throw std::runtime_error(ERR_CSTR(
+            "operator|=(FrameLHS const&, FrameRHS const&) : size mismatch"));
+    }
+    amt::frame_result_t<FrameLHS, FrameRHS> res(rhs.cols());
+    for(auto i = 0u; i < rhs.cols(); ++i){
+        rhs[i] |= lhs[i];
+    }
 }
 
 #endif // AMT_DATAFRAME_FRAME_HPP

@@ -85,8 +85,8 @@ template <typename... Ts> using series_result_t = typename series_result< std::d
 
 template <Series L, Series R>
 inline static constexpr bool is_series_same_v =
-    std::is_same_v<std::decay_t<typename L::value_type>,
-                   std::decay_t<typename R::value_type>>;
+    std::is_same_v<std::decay_t<typename std::decay_t<L>::value_type>,
+                   std::decay_t<typename std::decay_t<R>::value_type>>;
 
 } // namespace amt
 

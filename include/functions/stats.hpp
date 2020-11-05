@@ -31,7 +31,7 @@ template <typename T = double> struct minmax_t {
 
 template <typename T = double> struct mean_t {
     constexpr T operator()(Series auto &&s) const {
-        T sum = reduce(s, T{}, std::plus<T>{});
+        T sum = reduce<tag::col_t>(s, T{}, std::plus<T>{});
         return sum / static_cast<T>(s.size());
     }
 };
@@ -48,7 +48,7 @@ template <typename T = double> struct median_t {
 template <typename T = double> struct var_t {
     constexpr T operator()(Series auto &&s) const {
         T sum{};
-        T sq_sum = reduce(s, T{}, [&sum](T const &acc, T const &val) {
+        T sq_sum = reduce<tag::col_t>(s, T{}, [&sum](T const &acc, T const &val) {
             sum += val;
             return acc + (val * val);
         });
@@ -59,7 +59,7 @@ template <typename T = double> struct var_t {
 
     constexpr T operator()(Series auto &&s, tag::sample_t) const {
         T sum{};
-        T sq_sum = reduce(s, T{}, [&sum](T const &acc, T const &val) {
+        T sq_sum = reduce<tag::col_t>(s, T{}, [&sum](T const &acc, T const &val) {
             sum += val;
             return acc + (val * val);
         });
@@ -88,7 +88,7 @@ template <typename T = double> struct skewness_t {
         auto d = std::pow(sdev_t<T>{}(s), 3);
         auto mn = mean_t<T>{}(s);
 
-        T cub_sum = reduce(s, T{}, [mn](T const &acc, T const &val) {
+        T cub_sum = reduce<tag::col_t>(s, T{}, [mn](T const &acc, T const &val) {
             auto temp = val - mn;
             return acc + (temp * temp * temp);
         });
@@ -101,7 +101,7 @@ template <typename T = double> struct skewness_t {
         auto d = std::pow(sdev_t<T>{}(s, tag::sample_t{}), 3);
         auto mn = mean_t<T>{}(s);
 
-        T cub_sum = reduce(s, T{}, [mn](T const &acc, T const &val) {
+        T cub_sum = reduce<tag::col_t>(s, T{}, [mn](T const &acc, T const &val) {
             auto temp = val - mn;
             return acc + (temp * temp * temp);
         });
@@ -117,7 +117,7 @@ template <typename T = double> struct kurtosis_t {
         d *= d;
         auto mn = mean_t<T>{}(s);
 
-        T cub_sum = reduce(s, T{}, [mn](T const &acc, T const &val) {
+        T cub_sum = reduce<tag::col_t>(s, T{}, [mn](T const &acc, T const &val) {
             auto temp = val - mn;
             return acc + (temp * temp * temp * temp);
         });
@@ -131,7 +131,7 @@ template <typename T = double> struct kurtosis_t {
         d *= d;
         auto mn = mean_t<T>{}(s);
 
-        T cub_sum = reduce(s, T{}, [mn](T const &acc, T const &val) {
+        T cub_sum = reduce<tag::col_t>(s, T{}, [mn](T const &acc, T const &val) {
             auto temp = val - mn;
             return acc + (temp * temp * temp * temp);
         });
@@ -147,7 +147,7 @@ template <typename T = double> struct covar_t {
         auto ymn = mean_t<T>{}(y);
         auto c = (x - xmn) * (y - ymn);
         auto sz = static_cast<T>(x.size());
-        return reduce(c, T{}, std::plus<T>{}) / sz;
+        return reduce<tag::col_t>(c, T{}, std::plus<T>{}) / sz;
     }
 
     constexpr T operator()(Series auto &&x, Series auto &&y, tag::sample_t) const {
@@ -155,7 +155,7 @@ template <typename T = double> struct covar_t {
         auto ymn = mean_t<T>{}(y);
         auto c = (x - xmn) * (y - ymn);
         auto sz = static_cast<T>(x.size()) - T(1);
-        return reduce(c, T{}, std::plus<T>{}) / sz;
+        return reduce<tag::col_t>(c, T{}, std::plus<T>{}) / sz;
     }
 };
 

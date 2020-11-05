@@ -266,7 +266,7 @@ template <typename... Ts> struct basic_box {
         }
     }
 
-    constexpr auto dtype() const noexcept { return m_index; }
+    constexpr auto dtype() const noexcept { return ::amt::dtype<>(m_index); }
 
     constexpr bool is_valid() const noexcept {
         return (m_index == 0) || (m_data.index() == m_index);
@@ -274,33 +274,38 @@ template <typename... Ts> struct basic_box {
 
   private:
     template <typename T> constexpr void construct(T &&val) {
-        tuple_for<type_list>([&val, this]<typename I>(I) {
-            using element_type =
-                std::decay_t<std::tuple_element_t<I::value, type_list>>;
-            using t_type = std::decay_t<T>;
-            constexpr auto idx = type_index_v<element_type, basic_box>;
-            if constexpr (std::is_same_v<t_type, element_type>) {
-                if (m_index == idx) {
-                    m_data = std::move(val);
-                    return;
+        if( m_index == 0u ){
+            m_data = std::move(val);
+        }else{
+            tuple_for<type_list>([&val, this]<typename I>(I) {
+                using element_type =
+                    std::decay_t<std::tuple_element_t<I::value, type_list>>;
+                using t_type = std::decay_t<T>;
+                constexpr auto idx = type_index_v<element_type, basic_box>;
+                if constexpr (std::is_same_v<t_type, element_type>) {
+                    if (m_index == idx) {
+                        m_data = std::move(val);
+                        return;
+                    }
                 }
+                if constexpr (std::is_convertible_v<t_type, element_type>) {                                                                
+                    if (m_index == idx) {
+                        m_data = std::move(val);
+                    }
+                } else if constexpr (std::is_constructible_v<element_type,
+                                                                t_type>) {
+                    if (m_index == idx) {
+                        m_data = element_type(std::move(val));
+                    }
+                }
+            });
+            
+            if (empty()) {
+                throw std::runtime_error(
+                    ERR_CSTR("amt::basic_box::construct(T&&) : type mismatch"));
             }
-            if constexpr (std::is_convertible_v<t_type, element_type>) {                                                                
-                if (m_index == idx) {
-                    m_data = std::move(val);
-                }
-            } else if constexpr (std::is_constructible_v<element_type,
-                                                            t_type>) {
-                if (m_index == idx) {
-                    m_data = element_type(std::move(val));
-                }
-            }
-        });
-
-        if (empty()) {
-            throw std::runtime_error(
-                ERR_CSTR("amt::basic_box::construct(T&&) : type mismatch"));
         }
+
     }
     
     constexpr void construct(std::monostate) {

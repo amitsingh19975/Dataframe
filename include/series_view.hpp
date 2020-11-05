@@ -12,7 +12,7 @@ template <Box ValueType> struct basic_series_view<ValueType, tag::col_t> {
 
     using view_of = basic_series<ValueType>;
     using value_type = ValueType;
-    using name_type = std::string *;
+    using name_type = std::conditional_t<std::is_const_v<ValueType>, std::string const*, std::string *>;
     using size_type = typename view_of::size_type;
     using reference = typename view_of::reference;
     using const_reference = typename view_of::const_reference;
@@ -54,22 +54,22 @@ template <Box ValueType> struct basic_series_view<ValueType, tag::col_t> {
             return temp;
         }
 
-        constexpr iterator operator+=(difference_type k) noexcept {
+        constexpr iterator& operator+=(difference_type k) noexcept {
             m_ptr += k * static_cast<difference_type>(m_slice.step());
             return *this;
         }
 
-        constexpr iterator operator-=(difference_type k) noexcept {
+        constexpr iterator& operator-=(difference_type k) noexcept {
             m_ptr -= k * static_cast<difference_type>(m_slice.step());
             return *this;
         }
 
-        constexpr iterator operator++() noexcept {
+        constexpr iterator& operator++() noexcept {
             m_ptr += static_cast<difference_type>(m_slice.step());
             return *this;
         }
 
-        constexpr iterator operator--() noexcept {
+        constexpr iterator& operator--() noexcept {
             m_ptr -= static_cast<difference_type>(m_slice.step());
             return *this;
         }
@@ -142,7 +142,7 @@ template <Box ValueType> struct basic_series_view<ValueType, tag::col_t> {
     constexpr basic_series_view(pointer data, name_type name, size_type size,
                                 DType auto d, slice_type const &s)
         : m_data(data), m_slice(detail::norm_slice(s, size)), m_name(name),
-          m_dtype(get<value_type>(d)), m_size(size ? m_slice.size() : 0u) {}
+          m_dtype(get<value_type>(d)), m_size(size) {}
 
     template <PureSeries SeriesType>
     requires(is_series_same_v<view_of, SeriesType>) constexpr basic_series_view(
@@ -164,7 +164,7 @@ template <Box ValueType> struct basic_series_view<ValueType, tag::col_t> {
         parallel_copy(other.begin(), other.end(), begin());
     }
 
-    constexpr size_type size() const noexcept { return m_size; }
+    constexpr size_type size() const noexcept { return m_size ? m_slice.size() : 0u; }
 
     constexpr reference operator[](size_type k) {
         auto pos = m_slice.first() + k * m_slice.step();
@@ -230,7 +230,7 @@ template <Box ValueType> struct basic_series_view<ValueType, tag::col_t> {
     }
 
     constexpr iterator end() noexcept {
-        auto last = m_size * m_slice.step() + m_slice.first();
+        auto last = size() * m_slice.step() + m_slice.first();
         return {m_data + last, m_slice};
     }
 
@@ -239,7 +239,7 @@ template <Box ValueType> struct basic_series_view<ValueType, tag::col_t> {
     }
 
     constexpr const_iterator end() const noexcept {
-        auto last = m_size * m_slice.step() + m_slice.first();
+        auto last = size() * m_slice.step() + m_slice.first();
         return {m_data + last, m_slice};
     }
 
@@ -277,6 +277,14 @@ template <Box ValueType> struct basic_series_view<ValueType, tag::col_t> {
 
         if (m_name)
             temp.name(*m_name);
+    }
+
+    constexpr basic_series_view operator()(slice_type sl) const noexcept{
+        return {m_data, m_name, m_size, m_dtype, m_slice(sl)};
+    }
+
+    constexpr basic_series_view<ValueType const, axis_tag> operator()(slice_type sl) noexcept{
+        return {m_data, m_name, m_size, m_dtype, m_slice(sl)};
     }
 
     constexpr ::amt::dtype<> dtype() const noexcept { return m_dtype; }
@@ -335,22 +343,22 @@ template <Series SeriesType> struct basic_series_view<SeriesType, tag::row_t> {
             return temp;
         }
 
-        constexpr iterator operator+=(difference_type k) noexcept {
+        constexpr iterator& operator+=(difference_type k) noexcept {
             m_ptr += k;
             return *this;
         }
 
-        constexpr iterator operator-=(difference_type k) noexcept {
+        constexpr iterator& operator-=(difference_type k) noexcept {
             m_ptr -= k;
             return *this;
         }
 
-        constexpr iterator operator++() noexcept {
+        constexpr iterator& operator++() noexcept {
             ++m_ptr;
             return *this;
         }
 
-        constexpr iterator operator--() noexcept {
+        constexpr iterator& operator--() noexcept {
             --m_ptr;
             return *this;
         }
@@ -510,7 +518,7 @@ template <Series SeriesType> struct basic_series_view<SeriesType, tag::row_t> {
     }
 
     template <PureSeries OtherSeriesType> constexpr operator OtherSeriesType() const {
-        SeriesType temp(m_size);
+        OtherSeriesType temp(m_size);
         parallel_transform(begin(), end(), temp.begin(),
                            [](auto &&val) { return val; });
     }

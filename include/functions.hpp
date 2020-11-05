@@ -11,5 +11,7 @@
 #include <functions/shuffle.hpp>
 #include <functions/pipeline.hpp>
 #include <functions/concat.hpp>
+#include <functions/head.hpp>
+#include <functions/tail.hpp>
 
 #endif // AMT_DATAFRAME_FUNCTIONS_HPP

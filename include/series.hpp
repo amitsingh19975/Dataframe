@@ -2,9 +2,9 @@
 #define AMT_DATAFRAME_SERIES_HPP
 
 #include <box.hpp>
+#include <functions/filter.hpp>
 #include <series_view.hpp>
 #include <vector>
-#include <functions/filter.hpp>
 
 namespace amt {
 
@@ -156,7 +156,7 @@ template <typename ValueType> struct basic_series {
 
     constexpr basic_series(amt::SeriesView auto &&s, DType auto dtype)
         : m_data(s.size()), m_name(s.name()), m_dtype(get<value_type>(dtype)) {
-        parallel_copy(s.begin(), s.end(), begin(),
+        parallel_transform(s.begin(), s.end(), begin(),
                       [m_dtype = m_dtype](auto &&val) {
                           auto temp = val;
                           temp.dtype(m_dtype);
@@ -166,9 +166,7 @@ template <typename ValueType> struct basic_series {
 
     constexpr basic_series(amt::SeriesView auto &&s)
         : m_data(s.size()), m_name(s.name()) {
-        parallel_copy(
-            s.begin(), s.end(), begin(),
-            [m_dtype = m_dtype](auto &&val) { return value_type(val); });
+        parallel_copy(s.begin(), s.end(), begin());
     }
 
     constexpr basic_series(std::string_view name, base_type li)
@@ -271,7 +269,9 @@ template <typename ValueType> struct basic_series {
         }
     }
 
-    constexpr void resize(size_type sz) { m_data.resize(sz, value_type(m_dtype)); }
+    constexpr void resize(size_type sz) {
+        m_data.resize(sz, value_type(m_dtype));
+    }
 
     constexpr void reserve(size_type sz) { m_data.reserve(sz); }
 
@@ -303,9 +303,9 @@ template <typename ValueType> struct basic_series {
 
     constexpr bool empty() const noexcept { return m_data.empty(); }
 
-    constexpr std::string_view name() const noexcept { return m_name; }
-    
-    constexpr std::string_view name() noexcept { return m_name; }
+    constexpr std::string const& name() const noexcept { return m_name; }
+
+    constexpr std::string& name() noexcept { return m_name; }
 
     constexpr void name(std::string_view name) { m_name = std::string(name); }
 
@@ -336,7 +336,7 @@ template <typename ValueType> struct basic_series {
     constexpr ::amt::dtype<> dtype() const noexcept { return m_dtype; }
 
   private:
-   friend constexpr void detail::set_dtype(Series auto&, DType auto) noexcept;
+    friend constexpr void detail::set_dtype(Series auto &, DType auto) noexcept;
 
   private:
     base_type m_data;
@@ -351,10 +351,11 @@ using series = basic_series<box>;
 std::ostream &operator<<(std::ostream &os, amt::Series auto const &s) {
     std::string_view temp = "( Name: ";
     using series_type = std::decay_t<decltype(s)>;
-    if constexpr( amt::is_series_view_v<series_type> ){
-        if constexpr( std::is_same_v< typename series_type::axis_tag, amt::tag::row_t > ){
+    if constexpr (amt::is_series_view_v<series_type>) {
+        if constexpr (std::is_same_v<typename series_type::axis_tag,
+                                     amt::tag::row_t>) {
             temp = "( Row Name: ";
-        }else{
+        } else {
             temp = "( Column Name: ";
         }
     }
@@ -1054,7 +1055,8 @@ operator||(LHS const &lhs, RHS const &rhs) {
 }
 
 template <typename LHS, typename RHS>
-requires( !amt::is_std_basic_ostream_v<LHS> && static_cast<bool>(amt::Series<RHS> ^ amt::Series<LHS>)) constexpr auto
+requires(!amt::is_std_basic_ostream_v<LHS> &&
+         static_cast<bool>(amt::Series<RHS> ^ amt::Series<LHS>)) constexpr auto
 operator<<(LHS const &lhs, RHS const &rhs) {
     if constexpr (amt::Series<LHS>) {
         LHS temp(lhs.name(), lhs.size(), rhs, lhs.dtype());

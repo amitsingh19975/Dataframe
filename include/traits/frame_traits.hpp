@@ -4,10 +4,10 @@
 namespace amt
 {
 
-template<Box V>
+template<typename V>
 struct basic_frame;
 
-template <Box V> struct basic_frame_view;
+template <typename V> struct basic_frame_view;
 
 } // namespace amt
 
@@ -17,10 +17,10 @@ namespace amt
 template<typename T>
 struct is_frame : std::false_type{};
 
-template<Box V>
+template<typename V>
 struct is_frame< basic_frame<V> > : std::true_type{};
 
-template<Box V>
+template<typename V>
 struct is_frame< basic_frame_view<V> > : std::true_type{};
 
 template<typename T>
@@ -31,7 +31,7 @@ concept Frame = is_frame_v<T>;
 
 template <typename T> struct is_frame_view : std::false_type {};
 
-template <Box V>
+template <typename V>
 struct is_frame_view<basic_frame_view<V>> : std::true_type {};
 
 template <typename T>
@@ -92,8 +92,8 @@ template <typename... Ts> using frame_result_t = typename frame_result< std::dec
 
 template <Frame L, Frame R>
 inline static constexpr bool is_frame_same_v =
-    std::is_same_v<std::decay_t<typename L::box_type>,
-                   std::decay_t<typename R::box_type>>;
+    std::is_same_v<std::decay_t<typename std::decay_t<L>::box_type>,
+                   std::decay_t<typename std::decay_t<R>::box_type>>;
 
 
 } // namespace amt

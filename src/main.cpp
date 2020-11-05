@@ -17,11 +17,10 @@ int main(){
         {"Test2",{"1","2","3","4"}, amt::dtype<std::string>{}},
         {"Test3",{"1","2","3","4"}, amt::dtype<std::string>{}}
     };
-    amt::frame tf = {
-        {"Test4",{1,2,3,4,5}, amt::dtype<double>{}},
-        {"Test5",{"1","2","3","4","5"}, amt::dtype<std::string>{}},
-    };
-    std::cout<<f<<'\n';
-    std::cout<<amt::concat_col(f[0], tf)<<'\n';
+
+    std::cout<<amt::reduce_col(f,[](auto&& l, auto&& r){
+        return l + r;
+    })<<'\n';
+
     return 0;
 }
