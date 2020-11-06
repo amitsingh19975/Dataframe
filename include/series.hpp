@@ -8,7 +8,8 @@
 
 namespace amt {
 
-template <typename ValueType> struct basic_series {
+template <Box ValueType> struct basic_series<ValueType> {
+    using box_type = ValueType;
     using value_type = ValueType;
     using name_type = std::string;
     using base_type = std::vector<value_type>;
@@ -1051,57 +1052,6 @@ operator||(LHS const &lhs, RHS const &rhs) {
     } else {
         RHS temp(rhs.name(), rhs.size(), lhs, rhs.dtype());
         return ::operator||(temp, rhs);
-    }
-}
-
-template <typename LHS, typename RHS>
-requires(!amt::is_std_basic_ostream_v<LHS> &&
-         static_cast<bool>(amt::Series<RHS> ^ amt::Series<LHS>)) constexpr auto
-operator<<(LHS const &lhs, RHS const &rhs) {
-    if constexpr (amt::Series<LHS>) {
-        LHS temp(lhs.name(), lhs.size(), rhs, lhs.dtype());
-        return ::operator<<(lhs, temp);
-    } else {
-        RHS temp(rhs.name(), rhs.size(), lhs, rhs.dtype());
-        return ::operator<<(temp, rhs);
-    }
-}
-
-template <typename LHS, typename RHS>
-requires(static_cast<bool>(amt::Series<RHS> ^ amt::Series<LHS>)) constexpr auto
-operator>>(LHS const &lhs, RHS const &rhs) {
-    if constexpr (amt::Series<LHS>) {
-        LHS temp(lhs.name(), lhs.size(), rhs, lhs.dtype());
-        return ::operator>>(lhs, temp);
-    } else {
-        RHS temp(rhs.name(), rhs.size(), lhs, rhs.dtype());
-        return ::operator>>(temp, rhs);
-    }
-}
-
-template <typename LHS, typename RHS>
-requires(static_cast<bool>(amt::Series<RHS> ^ amt::Series<LHS>)) constexpr auto
-operator<<=(LHS &lhs, RHS const &rhs) {
-    if constexpr (amt::Series<LHS>) {
-        LHS temp(lhs.name(), lhs.size(), rhs, lhs.dtype());
-        ::operator<<=(lhs, temp);
-        return lhs;
-    } else {
-        RHS temp(rhs.name(), rhs.size(), lhs, rhs.dtype());
-        return ::operator<<=(temp, rhs);
-    }
-}
-
-template <typename LHS, typename RHS>
-requires(static_cast<bool>(amt::Series<RHS> ^ amt::Series<LHS>)) constexpr auto
-operator>>=(LHS &lhs, RHS const &rhs) {
-    if constexpr (amt::Series<LHS>) {
-        LHS temp(lhs.name(), lhs.size(), rhs, lhs.dtype());
-        ::operator>>=(lhs, temp);
-        return lhs;
-    } else {
-        RHS temp(rhs.name(), rhs.size(), lhs, rhs.dtype());
-        return ::operator>>=(temp, rhs);
     }
 }
 

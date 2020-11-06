@@ -269,7 +269,7 @@ template <typename... Ts> struct basic_box {
     constexpr auto dtype() const noexcept { return ::amt::dtype<>(m_index); }
 
     constexpr bool is_valid() const noexcept {
-        return (m_index == 0) || (m_data.index() == m_index);
+        return empty() || (m_data.index() == m_index);
     }
 
   private:
@@ -1027,54 +1027,6 @@ operator||(LHS const &lhs, RHS const &rhs) {
     } else {
         RHS temp(lhs);
         return ::operator||(temp, rhs);
-    }
-}
-
-template <typename LHS, typename RHS>
-requires(static_cast<bool>(amt::Box<RHS> ^ amt::Box<LHS>)) constexpr auto
-operator<<(LHS const &lhs, RHS const &rhs) {
-    if constexpr (amt::Box<LHS>) {
-        LHS temp(rhs);
-        return ::operator<<(lhs, temp);
-    } else {
-        RHS temp(lhs);
-        return ::operator<<(temp, rhs);
-    }
-}
-
-template <typename LHS, typename RHS>
-requires(static_cast<bool>(amt::Box<RHS> ^ amt::Box<LHS>)) constexpr auto
-operator>>(LHS const &lhs, RHS const &rhs) {
-    if constexpr (amt::Box<LHS>) {
-        LHS temp(rhs);
-        return ::operator>>(lhs, temp);
-    } else {
-        RHS temp(lhs);
-        return ::operator>>(temp, rhs);
-    }
-}
-
-template <typename LHS, typename RHS>
-requires(static_cast<bool>(amt::Box<RHS> ^ amt::Box<LHS>)) constexpr auto
-operator<<=(LHS &lhs, RHS const &rhs) {
-    if constexpr (amt::Box<LHS>) {
-        LHS temp(rhs);
-        return ::operator<<=(lhs, temp);
-    } else {
-        RHS temp(lhs);
-        return ::operator<<=(temp, rhs);
-    }
-}
-
-template <typename LHS, typename RHS>
-requires(static_cast<bool>(amt::Box<RHS> ^ amt::Box<LHS>)) constexpr auto
-operator>>=(LHS &lhs, RHS const &rhs) {
-    if constexpr (amt::Box<LHS>) {
-        LHS temp(rhs);
-        return ::operator>>=(lhs, temp);
-    } else {
-        RHS temp(lhs);
-        return ::operator>>=(temp, rhs);
     }
 }
 

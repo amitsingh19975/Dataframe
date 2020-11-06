@@ -208,7 +208,64 @@ struct filter_t {
     }
 };
 
+struct list_filter_t{
+    template <Frame FrameIn, PureFrame FrameOut, typename List>
+    requires(is_index_list_v<List> || is_name_list_v<List>)
+    constexpr FrameOut& operator()(FrameIn const &in, FrameOut &out,
+                              List&& list) const {
+        helper(in,out,std::forward<List>(list));
+        return out;
+    }
+
+    template <Frame FrameIn, typename List>
+    requires(is_index_list_v<List> || is_name_list_v<List>)
+    constexpr frame_result_t<FrameIn> operator()(FrameIn const &in,
+                              List&& list) const {
+        frame_result_t<FrameIn> out;
+        this->operator()(in, out, std::forward<List>(list));
+        return out;
+    }
+
+    template <PureFrame FrameIn, typename List>
+    requires(is_index_list_v<List> || is_name_list_v<List>)
+    constexpr FrameIn& operator()(FrameIn const &in, tag::inplace_t,
+                              List&& list) const {
+        auto temp = this->operator()(in, std::forward<List>(list));
+        in = std::move(temp);
+        return in;
+    }
+private:
+
+    template <Frame FrameIn, PureFrame FrameOut, typename List>
+    requires(is_index_list_v<List>)
+    constexpr void helper(FrameIn const &in, FrameOut &out,
+                              List list) const {
+        normalize_list(list, in.cols());
+        out.resize(list.size());
+        auto k = 0u;
+        for(auto const& idx : list){
+            out[k++] = in[idx];
+        }
+    }
+
+    template <Frame FrameIn, PureFrame FrameOut, typename List>
+    requires(is_name_list_v<List>)
+    void helper(FrameIn const &in, FrameOut &out,
+                              List const& list) const {
+        index_list i;
+        i.reserve(list.size());
+        auto names = in.vnames();
+        for(auto const& el : list){
+            auto it = std::find(names.begin(), names.end(), el);
+            i.push_back(static_cast<std::size_t>(std::distance(names.begin(),it)));
+        }
+        helper(in, out, std::move(i));
+    }
+};
+
 } // namespace fn
+
+inline static constexpr auto list_filter = fn::list_filter_t{};
 
 inline static constexpr auto filter = fn::filter_t{};
 

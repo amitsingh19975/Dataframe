@@ -378,6 +378,30 @@ template <Box BoxType> struct basic_frame<BoxType> {
         return m_data[k];
     }
 
+    constexpr reference operator[](std::string_view k) { 
+        auto it = std::find_if(begin(), end(), [&](auto const& s){
+            return s.name() == k;
+        });
+        if( it == end() ){
+            throw std::runtime_error(
+                ERR_CSTR("amt::basic_frame::operator[](std::string_view) : column name not found")
+            );
+        }
+        return *it;
+    }
+
+    constexpr const_reference operator[](std::string_view k) const {
+        auto it = std::find_if(begin(), end(), [&](auto const& s){
+            return s.name() == k;
+        });
+        if( it == end() ){
+            throw std::runtime_error(
+                ERR_CSTR("amt::basic_frame::operator[](std::string_view) : column name not found")
+            );
+        }
+        return *it;
+    }
+
     constexpr auto operator()(arg::col k) { return get_col(k()); }
 
     constexpr auto operator()(arg::col k) const { return get_col(k()); }
@@ -423,6 +447,10 @@ template <Box BoxType> struct basic_frame<BoxType> {
     constexpr reference at(size_type k) { return m_data.at(k); }
 
     constexpr const_reference at(size_type k) const { return m_data.at(k); }
+
+    constexpr reference at(std::string_view k) { return m_data[k]; }
+
+    constexpr const_reference at(std::string_view k) const { return m_data[k]; }
 
     constexpr box_type &at(size_type c, size_type r) {
         return m_data.at(c).at(r);

@@ -4,11 +4,6 @@ cmake_minimum_required(VERSION 3.15)
 project(dataframe CXX)
 # Including cmake settings
 
-if(EXISTS "${PROJECT_SOURCE_DIR}/cmake/MyCompilerSetting.cmake" )
-    message(STATUS "Changing Compiler")
-    include(cmake/MyCompilerSetting.cmake)
-endif()
-
 include(cmake/StandardProjectSettings.cmake)
 include(cmake/OpenMP.cmake)
 

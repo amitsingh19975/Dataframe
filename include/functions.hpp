@@ -13,5 +13,11 @@
 #include <functions/concat.hpp>
 #include <functions/head.hpp>
 #include <functions/tail.hpp>
+#include <functions/unqiue.hpp>
+#include <functions/frequency.hpp>
+#include <functions/count.hpp>
+#include <functions/pretty_string.hpp>
+#include <functions/info.hpp>
+#include <functions/describe.hpp>
 
 #endif // AMT_DATAFRAME_FUNCTIONS_HPP
