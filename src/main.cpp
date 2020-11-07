@@ -29,9 +29,11 @@ int main(){
     //     {"Test3",{"1","2","3","4"}, amt::dtype<std::string>{}}
     // };
 
-    amt::series t = {"Test1",{44., 27., 30., 38., 40., 35., std::nan("1"), 48., 50., 37.}, amt::dtype<double>{}};
+    // amt::series t = {"Test1",{44., 27., 30., 38., 40., 35., std::nan("1"), 48., 50., 37.}, amt::dtype<double>{}};
+    amt::series t = {"Test1",{'a','a','a','b'}, amt::dtype<char>{}};
+    t[1] = double(NAN);
     std::cout<<t<<'\n';
-    std::cout<<amt::imputer.mean(t,amt::tag::nan) <<'\n';
+    std::cout<<amt::imputer.freq(t, char(0))<<'\n';
 
     return 0;
 }
