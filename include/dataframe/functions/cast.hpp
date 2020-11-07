@@ -24,7 +24,7 @@ template <typename To> struct cast_t {
                     res = std::move(temp);
                 else {
                     if constexpr (std::numeric_limits<To>::has_quiet_NaN) {
-                        res = std::nan("1");
+                        res = To(NAN);
                     } else {
                         throw std::runtime_error(
                             ERR_CSTR("amt::cast_t::operator()(BoxType const &) "

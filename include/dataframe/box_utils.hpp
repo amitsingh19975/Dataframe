@@ -105,6 +105,12 @@ constexpr bool is_none(Box auto const &b) noexcept {
     return is<std::monostate>(b);
 }
 
+constexpr bool is_nan(Box auto const &b) noexcept {
+    return visit(b, [](auto&& val){
+        return val != val;
+    });
+}
+
 template <Box BoxType> constexpr std::size_t get(DType auto d) noexcept {
     return d.template id<BoxType>();
 }

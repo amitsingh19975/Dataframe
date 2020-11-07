@@ -20,6 +20,9 @@ namespace amt::tag{
 
     inline static constexpr col_t col{};
     inline static constexpr row_t row{};
+    
+    struct nan_t{};
+    inline static constexpr nan_t nan{};
 
 } // namespace amt::tag
 

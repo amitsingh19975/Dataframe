@@ -20,5 +20,6 @@
 #include <dataframe/functions/transform.hpp>
 #include <dataframe/functions/unqiue.hpp>
 #include <dataframe/functions/infer.hpp>
+#include <dataframe/functions/imputer.hpp>
 
 #endif // AMT_DATAFRAME_FUNCTIONS_HPP

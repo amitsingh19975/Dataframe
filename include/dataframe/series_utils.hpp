@@ -11,20 +11,35 @@ constexpr bool is_mixed_types(Series auto &&s) noexcept {
     return s.dtype() == 0u;
 }
 
+std::string type_to_string(Series auto const &s) {
+    if (!is_mixed_types(s)) {
+        if(s.empty()) return "none";
+        return type_to_string(s.back());
+    } else {
+        return "mixed";
+    }
+}
+
+template<typename T>
+constexpr bool is(Series auto&& s) noexcept{
+    if (!is_mixed_types(s)) {
+        if(s.empty()) return false;
+        return is<T>(s.back());
+    } else {
+        return is_monostate_v<T>;
+    }
+}
+
 template <typename... Ts> constexpr bool holds_type(Series auto &&s) noexcept {
+    return ( is<Ts>(s) || ... || false );
+}
+
+template <typename... Ts> constexpr bool any_holds_type(Series auto &&s) noexcept {
     for (auto const &el : s) {
         if (!(is<Ts>(el) || ... || false))
             return false;
     }
     return true;
-}
-
-std::string type_to_string(Series auto const &s) {
-    if (!is_mixed_types(s)) {
-        return type_to_string(s.back());
-    } else {
-        return "mixed";
-    }
 }
 
 constexpr bool is_integer(Series auto const &s) noexcept {
