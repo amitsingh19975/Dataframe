@@ -7,23 +7,26 @@
 
 namespace amt {
 
-constexpr bool is_mixed_types(Series auto &&s) noexcept {
+constexpr bool is_any_types(Series auto &&s) noexcept {
     return s.dtype() == 0u;
 }
 
-std::string type_to_string(Series auto const &s) {
-    if (!is_mixed_types(s)) {
-        if(s.empty()) return "none";
-        return type_to_string(s.back());
-    } else {
-        return "mixed";
-    }
+template <Series SeriesType> std::string type_to_string(SeriesType const &s) {
+    using box_type = typename SeriesType::box_type;
+    std::string ret;
+    box_type_for<box_type>([dtype = s.dtype(), &ret]<typename T>(auto idx, T) {
+        using el_type = typename T::type;
+        if (idx.value == get<box_type>(dtype)) {
+            ret = get_type_name_v<el_type>;
+        }
+    });
+    return ret;
 }
 
-template<typename T>
-constexpr bool is(Series auto&& s) noexcept{
-    if (!is_mixed_types(s)) {
-        if(s.empty()) return false;
+template <typename T> constexpr bool is(Series auto &&s) noexcept {
+    if (!is_any_types(s)) {
+        if (s.empty())
+            return false;
         return is<T>(s.back());
     } else {
         return is_monostate_v<T>;
@@ -31,10 +34,11 @@ constexpr bool is(Series auto&& s) noexcept{
 }
 
 template <typename... Ts> constexpr bool holds_type(Series auto &&s) noexcept {
-    return ( is<Ts>(s) || ... || false );
+    return (is<Ts>(s) || ... || false);
 }
 
-template <typename... Ts> constexpr bool any_holds_type(Series auto &&s) noexcept {
+template <typename... Ts>
+constexpr bool any_holds_type(Series auto &&s) noexcept {
     for (auto const &el : s) {
         if (!(is<Ts>(el) || ... || false))
             return false;

@@ -73,10 +73,15 @@ constexpr void apply_unary_operator(BoxType &&b, Fn &&fn) {
           [&](auto &&val) { std::invoke(std::forward<Fn>(fn), val); });
 }
 
-std::string type_to_string(Box auto const &b) {
-    return visit(b, []<typename T>(T const &) {
-        return std::string{get_type_name_v<T>};
+template <Box BoxType> std::string type_to_string(BoxType const &b) {
+    std::string ret;
+    box_type_for<BoxType>([dtype = b.dtype(), &ret]<typename T>(auto idx, T) {
+        using el_type = typename T::type;
+        if (idx.value == get<BoxType>(dtype)) {
+            ret = get_type_name_v<el_type>;
+        }
     });
+    return ret;
 }
 
 constexpr bool is_integer(Box auto const &b) noexcept {
@@ -106,9 +111,7 @@ constexpr bool is_none(Box auto const &b) noexcept {
 }
 
 constexpr bool is_nan(Box auto const &b) noexcept {
-    return visit(b, [](auto&& val){
-        return val != val;
-    });
+    return visit(b, [](auto &&val) { return val != val; });
 }
 
 template <Box BoxType> constexpr std::size_t get(DType auto d) noexcept {
@@ -160,6 +163,24 @@ template <> struct dtype<> {
 
     std::size_t index{};
 };
+
+template <Box BoxType> constexpr bool is(DType auto d, BoxType &&b) noexcept {
+    auto ti = get<BoxType>(d);
+    return b.index() == ti;
+}
+
+template <Box BoxType, typename Fn> constexpr void box_type_for(Fn &&fn) {
+    using tuple_type = typename std::decay_t<BoxType>::type_list;
+    tuple_for<tuple_type>([fn = std::forward<Fn>(fn)]<typename I>(I) {
+        using tuple_element = std::tuple_element<I::value, tuple_type>;
+        using index_t = type_index<typename tuple_element::type, BoxType>;
+        if constexpr (std::is_invocable_v<Fn, index_t, tuple_element>) {
+            std::invoke(fn, index_t{}, tuple_element{});
+        } else {
+            std::invoke(fn, index_t{});
+        }
+    });
+}
 
 } // namespace amt
 

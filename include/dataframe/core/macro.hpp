@@ -5,7 +5,7 @@
 #define STR(x) STR_HELPER(x)
 
 #ifdef __LINE__
-#define ERR_CSTR(MESS) "( Line: " STR(__LINE__) " ) " MESS 
+#define ERR_CSTR(MESS) "( Line: " STR(__LINE__) " ) " MESS
 #else
 #define ERR_CSTR(MESS) MESS
 #endif

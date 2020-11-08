@@ -9,6 +9,8 @@
 #include <dataframe/functions/filter.hpp>
 #include <dataframe/functions/frequency.hpp>
 #include <dataframe/functions/head.hpp>
+#include <dataframe/functions/imputer.hpp>
+#include <dataframe/functions/infer.hpp>
 #include <dataframe/functions/info.hpp>
 #include <dataframe/functions/maths.hpp>
 #include <dataframe/functions/pipeline.hpp>
@@ -19,7 +21,5 @@
 #include <dataframe/functions/tail.hpp>
 #include <dataframe/functions/transform.hpp>
 #include <dataframe/functions/unqiue.hpp>
-#include <dataframe/functions/infer.hpp>
-#include <dataframe/functions/imputer.hpp>
 
 #endif // AMT_DATAFRAME_FUNCTIONS_HPP

@@ -17,13 +17,11 @@ struct imputer_t {
     template <Series SeriesIn, Series SeriesOut>
     constexpr SeriesOut &mean(SeriesIn const &in, SeriesOut &out,
                               tag::nan_t) const {
-        auto fn = [](auto&& val){
-            return is_none(val) || is_nan(val);
-        };
+        auto fn = [](auto &&val) { return is_none(val) || is_nan(val); };
         if (holds_type<float>(in)) {
-            mean<float>(in,out, std::move(fn));
+            mean<float>(in, out, std::move(fn));
         } else {
-            mean<double>(in,out, std::move(fn));
+            mean<double>(in, out, std::move(fn));
         }
         return out;
     }
@@ -32,7 +30,7 @@ struct imputer_t {
     requires(std::is_arithmetic_v<MissingType>) constexpr SeriesOut &mean(
         SeriesIn const &in, SeriesOut &out,
         MissingType const &missing_value) const {
-        return mean<MissingType>(in,out, [&missing_value, this](auto&& val){
+        return mean<MissingType>(in, out, [&missing_value, this](auto &&val) {
             return this->comp(get<MissingType>(val), missing_value);
         });
     }
@@ -72,26 +70,23 @@ struct imputer_t {
     template <Series SeriesIn, Series SeriesOut>
     constexpr SeriesOut &freq(SeriesIn const &in, SeriesOut &out,
                               tag::nan_t) const {
-        auto fn = [](auto&& val){
-            return is_none(val) || is_nan(val);
-        };
+        auto fn = [](auto &&val) { return is_none(val) || is_nan(val); };
         return freq(in, out, std::move(fn));
     }
 
     template <Series SeriesIn, Series SeriesOut, typename MissingType>
     constexpr SeriesOut &freq(SeriesIn const &in, SeriesOut &out,
                               MissingType const &missing_value) const {
-        auto fn = [&missing_value, this](auto&& val){
+        auto fn = [&missing_value, this](auto &&val) {
             return this->comp(get<MissingType>(val), missing_value);
         };
         return freq(in, out, std::move(fn));
     }
 
-    template <Series SeriesIn, Series SeriesOut,
-              typename Fn>
-    requires( std::is_invocable_v<Fn, typename SeriesIn::box_type> )
-    constexpr SeriesOut &freq(SeriesIn const &in, SeriesOut &out,
-                              Fn &&fn) const {
+    template <Series SeriesIn, Series SeriesOut, typename Fn>
+    requires(std::is_invocable_v<
+             Fn, typename SeriesIn::box_type>) constexpr SeriesOut
+        &freq(SeriesIn const &in, SeriesOut &out, Fn &&fn) const {
         if (in.empty())
             return out;
 
@@ -127,22 +122,24 @@ struct imputer_t {
     constexpr SeriesOut &constant(SeriesIn const &in, SeriesOut &out,
                                   MissingType const &missing_value,
                                   auto &&ct) const {
-        
-        auto fn = [&missing_value, this](auto&& val){
+
+        auto fn = [&missing_value, this](auto &&val) {
             return this->comp(get<MissingType>(val), missing_value);
         };
-        return constant<MissingType>(in, out, std::move(fn), std::forward<decltype(ct)>(ct));
+        return constant<MissingType>(in, out, std::move(fn),
+                                     std::forward<decltype(ct)>(ct));
     }
 
-    template <typename MissingType, Series SeriesIn, Series SeriesOut, typename Fn>
-    constexpr SeriesOut &constant(SeriesIn const &in, SeriesOut &out,
-                                  Fn &&fn,
+    template <typename MissingType, Series SeriesIn, Series SeriesOut,
+              typename Fn>
+    constexpr SeriesOut &constant(SeriesIn const &in, SeriesOut &out, Fn &&fn,
                                   auto &&ct) const {
         if (in.empty())
             return out;
 
         transform(in, out,
-                  [ct = std::move(ct), fn = std::forward<Fn>(fn)]<typename T>(T const &val) {
+                  [ct = std::move(ct),
+                   fn = std::forward<Fn>(fn)]<typename T>(T const &val) {
                       if (std::invoke(fn, val))
                           return T(static_cast<MissingType>(ct),
                                    dtype<MissingType>());
@@ -154,10 +151,9 @@ struct imputer_t {
     template <Series SeriesIn, Series SeriesOut>
     constexpr SeriesOut &constant(SeriesIn const &in, SeriesOut &out,
                                   tag::nan_t, auto &&ct) const {
-        auto fn = [](auto&& val){
-            return is_nan(val) || is_none(val);
-        };
-        return constant< std::decay_t<decltype(ct)> >(in, out, std::move(fn), std::forward<decltype(ct)>(ct));
+        auto fn = [](auto &&val) { return is_nan(val) || is_none(val); };
+        return constant<std::decay_t<decltype(ct)>>(
+            in, out, std::move(fn), std::forward<decltype(ct)>(ct));
     }
 
     template <Series SeriesIn>
@@ -235,7 +231,7 @@ struct imputer_t {
                                                  auto &&new_val) const {
         series_result_t<SeriesIn> out(in.name(), in.size());
         constant<MissingType>(in, out, std::forward<decltype(val)>(val),
-                 std::forward<decltype(new_val)>(new_val));
+                              std::forward<decltype(new_val)>(new_val));
         return out;
     }
 
@@ -243,7 +239,7 @@ struct imputer_t {
     constexpr SeriesIn &constant(SeriesIn &in, tag::inplace_t, auto &&val,
                                  auto &&new_val) const {
         constant<MissingType>(in, in, std::forward<decltype(val)>(val),
-                 std::forward<decltype(new_val)>(new_val));
+                              std::forward<decltype(new_val)>(new_val));
         return in;
     }
 

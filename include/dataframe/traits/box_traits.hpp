@@ -23,14 +23,12 @@ inline static constexpr bool is_box_v = is_box<std::decay_t<T>>::value;
 
 template <typename T> concept Box = is_box_v<T>;
 
-template<typename T>
-struct varaint_from_tuple;
+template <typename T> struct varaint_from_tuple;
 
-template<typename T>
+template <typename T>
 using varaint_from_tuple_t = typename varaint_from_tuple<T>::type;
 
-template<typename... Ts>
-struct varaint_from_tuple< std::tuple<Ts...> >{
+template <typename... Ts> struct varaint_from_tuple<std::tuple<Ts...>> {
     using type = std::variant<Ts...>;
 };
 
@@ -62,6 +60,10 @@ template <typename T, Box B> struct type_index {
 
   public:
     static constexpr std::size_t value = helper();
+
+    constexpr operator std::size_t() const noexcept { return value; }
+
+    constexpr std::size_t operator()() const noexcept { return value; }
 };
 
 template <typename T, Box B>
@@ -85,11 +87,11 @@ template <typename T, typename U>
 requires(Box<T> ||
          Box<U>) using box_result_t = std::conditional_t<is_box_v<T>, T, U>;
 
-template<typename T>
-inline static constexpr bool is_monostate_v = std::is_same_v< std::decay_t<T>, std::monostate >;
+template <typename T>
+inline static constexpr bool is_monostate_v =
+    std::is_same_v<std::decay_t<T>, std::monostate>;
 
-template <typename... Ts>
-struct dtype;
+template <typename... Ts> struct dtype;
 
 template <typename T> struct is_dtype : std::false_type {};
 
@@ -100,21 +102,16 @@ inline static constexpr bool is_dtype_v = is_dtype<std::decay_t<T>>::value;
 
 template <typename T> concept DType = is_dtype_v<T>;
 
-template <typename U, DType D>
-struct dtype_result;
+template <typename U, DType D> struct dtype_result;
 
 template <typename U, DType D>
-using dtype_result_t = typename dtype_result<U,D>::type;
+using dtype_result_t = typename dtype_result<U, D>::type;
 
-template <typename U, typename T>
-struct dtype_result<U, dtype<T>>{
+template <typename U, typename T> struct dtype_result<U, dtype<T>> {
     using type = T;
 };
 
-template <typename U>
-struct dtype_result<U, dtype<>>{
-    using type = U;
-};
+template <typename U> struct dtype_result<U, dtype<>> { using type = U; };
 
 } // namespace amt
 

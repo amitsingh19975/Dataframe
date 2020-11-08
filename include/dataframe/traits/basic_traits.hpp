@@ -1,8 +1,8 @@
 #if !defined(AMT_DATAFRAME_TRAITS_BASIC_TRAITS_HPP)
 #define AMT_DATAFRAME_TRAITS_BASIC_TRAITS_HPP
 
-#include <type_traits>
 #include <ostream>
+#include <type_traits>
 
 namespace amt {
 
@@ -94,7 +94,9 @@ template <typename T> concept HasPostDec = requires(T t) { {t--}; };
 
 template <typename T> concept HasPreDec = requires(T t) { {--t}; };
 
-template <typename T> concept HasStdToString = requires(T t) { {std::to_string(t)}; };
+template <typename T> concept HasStdToString = requires(T t) {
+    {std::to_string(t)};
+};
 
 template <typename T> struct is_tuple : std::false_type {};
 
@@ -104,13 +106,11 @@ inline static constexpr bool is_tuple_v = is_tuple<std::decay_t<T>>::value;
 template <typename... Ts>
 struct is_tuple<std::tuple<Ts...>> : std::true_type {};
 
-template<typename T>
-struct is_std_string : std::false_type{};
+template <typename T> struct is_std_string : std::false_type {};
 
-template<>
-struct is_std_string< std::string > : std::true_type{};
+template <> struct is_std_string<std::string> : std::true_type {};
 
-template<typename T>
+template <typename T>
 inline static constexpr bool is_std_string_v = is_std_string<T>::value;
 
 } // namespace amt

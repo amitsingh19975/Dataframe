@@ -2,17 +2,17 @@
 #define AMT_DATAFRAME_CORE_UTILS_HPP
 
 #include <algorithm>
-#include <iomanip>
-#include <string>
+#include <cerrno>
+#include <cstdlib>
 #include <dataframe/traits/basic_traits.hpp>
+#include <iomanip>
+#include <optional>
+#include <string>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
-#include <optional>
-#include <cstdlib>
-#include <cerrno>
 
 namespace amt {
 
@@ -43,7 +43,7 @@ template <typename T> struct get_type_name {
 };
 
 template <> struct get_type_name<std::monostate> {
-    static constexpr std::string_view value = "empty";
+    static constexpr std::string_view value = "any";
 };
 
 template <> struct get_type_name<bool> {
@@ -157,9 +157,8 @@ inline constexpr void trim(std::string &s) {
 constexpr index_list &normalize_list(index_list &l, std::size_t max_idx) {
     auto it = std::unique(l.begin(), l.end());
     l.erase(it, l.end());
-    it = std::remove_if(l.begin(), l.end(), [sz = max_idx](auto i){
-        return i >= sz;
-    });
+    it = std::remove_if(l.begin(), l.end(),
+                        [sz = max_idx](auto i) { return i >= sz; });
     l.erase(it, l.end());
     std::sort(l.begin(), l.end());
     return l;
@@ -211,180 +210,253 @@ requires is_tuple_v<TupleTraits> constexpr auto tuple_for(Fn &&fn) noexcept {
             std::tuple_size_v<std::decay_t<TupleTraits>>>{});
 }
 
-namespace conv{
+namespace conv {
 
-    std::optional<float> to_float(std::string_view s) {
-        char* end;
-        auto res = std::strtof(s.data(), &end);
-        auto err = (errno == ERANGE);
-        errno = 0;
-        if( end == s.data() || *end != '\0' || err) return std::nullopt;
-        return {res};
-    }
-    
-    std::optional<double> to_double(std::string_view s) {
-        char* end;
-        auto res = std::strtod(s.data(), &end);
-        auto err = (errno == ERANGE);
-        errno = 0;
-        if( end == s.data() || *end != '\0' || err) return std::nullopt;
-        return {res};
-    }
-    
-    std::optional<long double> to_long_double(std::string_view s) {
-        char* end;
-        auto res = std::strtold(s.data(), &end);
-        auto err = (errno == ERANGE);
-        errno = 0;
-        if( end == s.data() || *end != '\0' || err) return std::nullopt;
-        return {res};
-    }
-    
-    std::optional<long> to_long(std::string_view s) {
-        char* end;
-        auto res = std::strtol(s.data(), &end, 10);
-        auto err = (errno == ERANGE);
-        errno = 0;
-        if( end == s.data() || *end != '\0' || err) return std::nullopt;
-        return {res};
-    }
-    
-    std::optional<long long> to_long_long(std::string_view s) {
-        char* end;
-        auto res = std::strtoll(s.data(), &end, 10);
-        auto err = (errno == ERANGE);
-        errno = 0;
-        if( end == s.data() || *end != '\0' || err) return std::nullopt;
-        return {res};
-    }
-    
-    std::optional<unsigned long> to_unsigned_long(std::string_view s) {
-        char* end;
-        auto res = std::strtoul(s.data(), &end, 10);
-        auto err = (errno == ERANGE);
-        errno = 0;
-        if( end == s.data() || *end != '\0' || err) return std::nullopt;
-        return {res};
-    }
-    
-    std::optional<unsigned long long> to_unsigned_long_long(std::string_view s) {
-        char* end;
-        auto res = std::strtoull(s.data(), &end, 10);
-        auto err = (errno == ERANGE);
-        errno = 0;
-        if( end == s.data() || *end != '\0' || err) return std::nullopt;
-        return {res};
-    }
+std::optional<float> to_float(std::string_view s) {
+    char *end;
+    auto res = std::strtof(s.data(), &end);
+    auto err = (errno == ERANGE);
+    errno = 0;
+    if (end == s.data() || *end != '\0' || err)
+        return std::nullopt;
+    return {res};
+}
 
-    bool cast(float& res, std::string_view val){
-        auto op = to_float(val);
-        
-        if(op) res = *op;
-        else return false;
-        
-        return true;
-    }
+std::optional<double> to_double(std::string_view s) {
+    char *end;
+    auto res = std::strtod(s.data(), &end);
+    auto err = (errno == ERANGE);
+    errno = 0;
+    if (end == s.data() || *end != '\0' || err)
+        return std::nullopt;
+    return {res};
+}
 
-    bool cast(double& res, std::string_view val){
-        auto op = to_double(val);
-        
-        if(op) res = *op;
-        else return false;
-        
-        return true;
-    }
+std::optional<long double> to_long_double(std::string_view s) {
+    char *end;
+    auto res = std::strtold(s.data(), &end);
+    auto err = (errno == ERANGE);
+    errno = 0;
+    if (end == s.data() || *end != '\0' || err)
+        return std::nullopt;
+    return {res};
+}
 
-    bool cast(long double& res, std::string_view val){
-        auto op = to_long_double(val);
-        
-        if(op) res = *op;
-        else return false;
-        
-        return true;
-    }
+std::optional<long> to_long(std::string_view s) {
+    char *end;
+    auto res = std::strtol(s.data(), &end, 10);
+    auto err = (errno == ERANGE);
+    errno = 0;
+    if (end == s.data() || *end != '\0' || err)
+        return std::nullopt;
+    return {res};
+}
 
-    bool cast(long& res, std::string_view val){
-        auto op = to_long(val);
-        
-        if(op) res = *op;
-        else return false;
-        
-        return true;
-    }
+std::optional<long long> to_long_long(std::string_view s) {
+    char *end;
+    auto res = std::strtoll(s.data(), &end, 10);
+    auto err = (errno == ERANGE);
+    errno = 0;
+    if (end == s.data() || *end != '\0' || err)
+        return std::nullopt;
+    return {res};
+}
 
-    bool cast(unsigned long& res, std::string_view val){
-        auto op = to_unsigned_long(val);
-        
-        if(op) res = *op;
-        else return false;
-        
-        return true;
-    }
+std::optional<unsigned long> to_unsigned_long(std::string_view s) {
+    char *end;
+    auto res = std::strtoul(s.data(), &end, 10);
+    auto err = (errno == ERANGE);
+    errno = 0;
+    if (end == s.data() || *end != '\0' || err)
+        return std::nullopt;
+    return {res};
+}
 
-    bool cast(long long& res, std::string_view val){
-        auto op = to_long_long(val);
-        if(op) res = *op;
-        else return false;
-        
-        return true;
-    }
+std::optional<unsigned long long> to_unsigned_long_long(std::string_view s) {
+    char *end;
+    auto res = std::strtoull(s.data(), &end, 10);
+    auto err = (errno == ERANGE);
+    errno = 0;
+    if (end == s.data() || *end != '\0' || err)
+        return std::nullopt;
+    return {res};
+}
 
-    bool cast(unsigned long long& res, std::string_view val){
-        auto op = to_unsigned_long_long(val);
-        
-        if(op) res = *op;
-        else return false;
-        
-        return true;
-    }
+bool cast(float &res, std::string_view val) {
+    auto op = to_float(val);
 
-    template<typename T>
-    requires( std::is_integral_v<T> && std::numeric_limits<T>::is_signed )
-    bool cast(T& res, std::string_view val){
-        auto op = to_long_long(val);
-        
-        if(op) res = static_cast<T>(*op);
-        else return false;
-        
-        return true;
-    }
+    if (op)
+        res = *op;
+    else
+        return false;
 
-    template<typename T>
-    requires( std::is_integral_v<T> && !std::numeric_limits<T>::is_signed )
-    bool cast(T& res, std::string_view val){
-        auto op = to_unsigned_long_long(val);
-        
-        if(op) res = static_cast<T>(*op);
-        else return false;
-        
-        return true;
-    }
+    return true;
+}
 
-    bool cast(std::string& res, std::string val){
-        res = std::move(val);
-        return true;
-    }
+bool cast(double &res, std::string_view val) {
+    auto op = to_double(val);
 
-    template<HasStdToString T>
-    bool cast(std::string& res, T&& val){
-        res = std::to_string(std::forward<T>(val));
-        return true;
-    }
+    if (op)
+        res = *op;
+    else
+        return false;
 
-    template<typename T>
-    bool cast(T& res, std::monostate){
-        res = T{};
-        return true;
-    }
+    return true;
+}
 
-    template<typename T, typename U>
-    requires(std::is_constructible_v<T,U>)
-    bool cast(T& res, U&& val){
-        res = T(std::forward<U>(val));
-        return true;
-    }
+bool cast(long double &res, std::string_view val) {
+    auto op = to_long_double(val);
 
-    template <typename To, typename From> concept HasCast = requires(To t, From f) { {cast(t, f)}; };
+    if (op)
+        res = *op;
+    else
+        return false;
+
+    return true;
+}
+
+bool cast(long &res, std::string_view val) {
+    auto op = to_long(val);
+
+    if (op)
+        res = *op;
+    else
+        return false;
+
+    return true;
+}
+
+bool cast(unsigned long &res, std::string_view val) {
+    auto op = to_unsigned_long(val);
+
+    if (op)
+        res = *op;
+    else
+        return false;
+
+    return true;
+}
+
+bool cast(long long &res, std::string_view val) {
+    auto op = to_long_long(val);
+    if (op)
+        res = *op;
+    else
+        return false;
+
+    return true;
+}
+
+bool cast(unsigned long long &res, std::string_view val) {
+    auto op = to_unsigned_long_long(val);
+
+    if (op)
+        res = *op;
+    else
+        return false;
+
+    return true;
+}
+
+template <typename T>
+requires(std::is_integral_v<T> &&std::numeric_limits<T>::is_signed) bool cast(
+    T &res, std::string_view val) {
+    auto op = to_long_long(val);
+
+    if (op)
+        res = static_cast<T>(*op);
+    else
+        return false;
+
+    return true;
+}
+
+template <typename T>
+requires(std::is_integral_v<T> &&
+         !std::numeric_limits<T>::is_signed) bool cast(T &res,
+                                                       std::string_view val) {
+    auto op = to_unsigned_long_long(val);
+
+    if (op)
+        res = static_cast<T>(*op);
+    else
+        return false;
+
+    return true;
+}
+
+bool cast(bool &res, std::string_view val) {
+    if (val.size() > 5u)
+        return false;
+
+    constexpr std::string_view lookup[2] = {"true", "false"};
+
+    if (val.size() == 1u) {
+        if (val[0] == '0' || std::tolower(val[0]) == 'f') {
+            res = false;
+            return true;
+        } else if (val[0] == '1' || std::tolower(val[0]) == 't') {
+            res = true;
+            return true;
+        }
+        return false;
+    } else if (val.size() == 4u) {
+        for (auto i = 0u; i < lookup[0].size(); ++i) {
+            if (std::tolower(val[i]) != lookup[0][i]) {
+                return false;
+            }
+        }
+        res = true;
+    } else if (val.size() == 5u) {
+        for (auto i = 0u; i < lookup[1].size(); ++i) {
+            if (std::tolower(val[i]) != lookup[1][i]) {
+                return false;
+            }
+        }
+        res = false;
+    }
+    return true;
+}
+
+bool cast(char &res, std::string_view val) {
+    if (val.size() > 1u)
+        return false;
+
+    res = val[0];
+    return true;
+}
+
+bool cast(unsigned char &res, std::string_view val) {
+    if (val.size() > 1u)
+        return false;
+
+    res = static_cast<unsigned char>(val[0]);
+    return true;
+}
+
+bool cast(std::string &res, std::string val) {
+    res = std::move(val);
+    return true;
+}
+
+template <HasStdToString T> bool cast(std::string &res, T &&val) {
+    res = std::to_string(std::forward<T>(val));
+    return true;
+}
+
+template <typename T> bool cast(T &res, char val) {
+    return cast(res, std::string(1u, val));
+}
+
+template <typename T, typename U>
+requires(std::is_convertible_v<T, U>) bool cast(T &res, U &&val) {
+    res = static_cast<T>(std::forward<U>(val));
+    return true;
+}
+
+template <typename To, typename From> concept HasCast = requires(To t, From f) {
+    {cast(t, f)};
+};
 
 } // namespace conv
 

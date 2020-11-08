@@ -50,13 +50,13 @@ template <typename... Ts> struct basic_box {
     constexpr ~basic_box() = default;
 
     constexpr basic_box(DType auto dtype) noexcept
-        : m_index(get<basic_box>(dtype)) {
-        construct(dtype_result_t<std::monostate, decltype(dtype)>{});
-    }
+        : m_index(get<basic_box>(dtype)) {}
 
     template <typename U>
     requires(has_type_v<U, basic_box> &&
-             !std::is_constructible_v<std::string,U>) constexpr basic_box(U u, DType auto dtype)
+             !std::is_constructible_v<std::string,
+                                      U>) constexpr basic_box(U u,
+                                                              DType auto dtype)
         : m_data(
               std::in_place_index<
                   type_index_v<dtype_result_t<U, decltype(dtype)>, basic_box>>,
@@ -70,13 +70,13 @@ template <typename... Ts> struct basic_box {
 
     template <typename U>
     requires(has_type_v<U, basic_box> &&
-             !std::is_constructible_v<std::string,U>) constexpr basic_box(U u)
+             !std::is_constructible_v<std::string, U>) constexpr basic_box(U u)
         : m_data(std::in_place_index<type_index_v<U, basic_box>>,
                  std::move(u)) {}
 
     template <typename U>
     requires(has_type_v<U, basic_box> &&
-             !std::is_constructible_v<std::string,U>) constexpr basic_box &
+             !std::is_constructible_v<std::string, U>) constexpr basic_box &
     operator=(U u) {
         basic_box temp(::amt::dtype<>{m_index});
         temp.construct(std::move(u));
@@ -93,16 +93,16 @@ template <typename... Ts> struct basic_box {
         }
     }
 
-    template<typename S>
-    requires(std::is_constructible_v<std::string,S> && !Box<S>)
-    constexpr  basic_box(S&& u, DType auto dtype)
-        : basic_box(std::string(std::forward<S>(u)), dtype)
-        {}
-    
-    template<typename S>
-    requires(std::is_constructible_v<std::string,S> && !Box<S>)
-    constexpr basic_box(S&& u) : basic_box(std::string(std::forward<S>(u))) {}
-    
+    template <typename S>
+    requires(std::is_constructible_v<std::string, S> &&
+             !Box<S>) constexpr basic_box(S &&u, DType auto dtype)
+        : basic_box(std::string(std::forward<S>(u)), dtype) {}
+
+    template <typename S>
+    requires(std::is_constructible_v<std::string, S> &&
+             !Box<S>) constexpr basic_box(S &&u)
+        : basic_box(std::string(std::forward<S>(u))) {}
+
     basic_box(std::string u) : m_data(std::move(u)) {}
 
     basic_box &operator=(std::string u) {
@@ -112,9 +112,10 @@ template <typename... Ts> struct basic_box {
         return *this;
     }
 
-    template<typename S>
-    requires(std::is_constructible_v<std::string,S> && !Box<S>)
-    constexpr basic_box &operator=(S&& u) {
+    template <typename S>
+    requires(std::is_constructible_v<std::string, S> &&
+             !Box<S>) constexpr basic_box &
+    operator=(S &&u) {
         basic_box temp(::amt::dtype<std::string>{});
         temp.construct(std::string(std::forward<S>(u)));
         std::swap(*this, temp);
@@ -318,25 +319,10 @@ template <typename... Ts> struct basic_box {
                     }
                 }
             });
-
-            if (empty()) {
-                throw std::runtime_error(
-                    ERR_CSTR("amt::basic_box::construct(T&&) : type mismatch"));
-            }
         }
     }
 
-    constexpr void construct(std::monostate) {
-        tuple_for<type_list>([this]<typename I>(I) {
-            using element_type =
-                std::decay_t<std::tuple_element_t<I::value, type_list>>;
-            constexpr auto idx = type_index_v<element_type, basic_box>;
-            if (m_index == idx) {
-                m_data = element_type{};
-                return;
-            }
-        });
-    }
+    constexpr void construct(std::monostate) {}
 
   private:
     base_type m_data;
