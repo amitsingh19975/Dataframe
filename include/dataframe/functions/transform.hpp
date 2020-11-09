@@ -13,15 +13,22 @@ namespace fn {
 
 struct transform_t {
     template <Series SeriesType1, Series SeriesType2, typename Fn>
-    constexpr SeriesType2 &operator()(SeriesType1 const &in, SeriesType2 &out,
+    constexpr SeriesType2 &operator()(SeriesType1 const &in1, SeriesType2 &&in2,
                                       Fn &&fn) const {
-        out.name(in.name());
-        if constexpr (PureSeries<SeriesType2>) {
-            detail::set_dtype(out, in.dtype());
+        if constexpr(std::is_const_v<SeriesType2>){
+            using return_type = series_result_t<SeriesType1, SeriesType2>;
+            return_type temp(in1.size());
+            this->operator()(in1, in2, temp, std::forward<Fn>(fn));
+            return temp;
+        }else{
+            in2.name(in1.name());
+            if constexpr (PureSeries<SeriesType2>) {
+                detail::set_dtype(in2, in1.dtype());
+            }
+            parallel_transform(in1.begin(), in1.end(), in2.begin(),
+                            std::forward<Fn>(fn));
+            return in2;
         }
-        parallel_transform(in.begin(), in.end(), out.begin(),
-                           std::forward<Fn>(fn));
-        return out;
     }
 
     template <Series SeriesType1, Series SeriesType2, Series SeriesType3,
@@ -50,15 +57,6 @@ struct transform_t {
                                      Fn &&fn) const {
         this->operator()(in, in, std::forward<Fn>(fn));
         return in;
-    }
-
-    template <Series SeriesType1, Series SeriesType2, typename Fn>
-    constexpr auto operator()(SeriesType1 const &in1, SeriesType2 const &in2,
-                              Fn &&fn) const {
-        using return_type = series_result_t<SeriesType1, SeriesType2>;
-        return_type temp(in1.size());
-        this->operator()(in1, in2, temp, std::forward<Fn>(fn));
-        return temp;
     }
 
     template <Series SeriesType1, Series SeriesType2, typename Fn>

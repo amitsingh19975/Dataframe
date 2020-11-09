@@ -37,7 +37,7 @@ template <bool ApplyDefaultNaList> struct infer_t {
     template <Series SeriesType, Series SeriesOut>
     constexpr SeriesOut &operator()(SeriesType const &in, SeriesOut &out,
                                     name_list const &na_list = {}) const {
-        std::size_t count[3] = {0};
+        std::size_t count[TYPE_SIZE] = {0};
         auto sz = in.size();
         for (auto i = 0ul; i < sz; ++i) {
             auto &b = in[i];
@@ -51,19 +51,30 @@ template <bool ApplyDefaultNaList> struct infer_t {
                     continue;
                 }
             }
+            if (box_infer<bool>(b)) {
+                ++count[BOOL];
+            } 
+            
+            if (box_infer<char>(b)) {
+                ++count[CHAR];
+            } 
+            
             if (box_infer<long long>(b)) {
                 ++count[INT64];
+            } 
+            
+            if (box_infer<double>(b)) {
                 ++count[DOUBLE];
-            } else if (box_infer<double>(b)) {
-                ++count[DOUBLE];
-            } else {
-                ++count[STRING];
             }
         }
 
         if (sz == count[INT64]) {
             cast<long long, ApplyDefaultNaList>(in, out);
-        } else if (count[DOUBLE] > count[STRING]) {
+        } else if (sz == count[BOOL]) {
+            cast<bool, ApplyDefaultNaList>(in, out);
+        } else if (sz == count[CHAR]) {
+            cast<char, ApplyDefaultNaList>(in, out);
+        } else if (sz == count[DOUBLE]) {
             cast<double, ApplyDefaultNaList>(in, out);
         } else {
             cast<std::string, ApplyDefaultNaList>(in, out);
@@ -115,7 +126,14 @@ template <bool ApplyDefaultNaList> struct infer_t {
     }
 
   private:
-    enum : unsigned char { INT64 = 0u, DOUBLE = 1u, STRING = 2u };
+    enum : unsigned char {
+        INT64 = 0u,
+        DOUBLE = 1u,
+        STRING = 2u,
+        BOOL = 3u,
+        CHAR = 4u,
+        TYPE_SIZE
+    };
 
     template <typename To, typename U>
     bool can_be_casted_helper(U &&val) const {
@@ -141,9 +159,7 @@ template <bool ApplyDefaultNaList> struct infer_t {
                                     auto &&list) const {
         if (is<std::string>(b)) {
             if (in(list, get<std::string>(b))) {
-                ++count[INT64];
-                ++count[DOUBLE];
-                ++count[STRING];
+                for(auto i = 0ul; i < TYPE_SIZE; ++i) ++count[i];
                 return true;
             }
         }

@@ -21,5 +21,6 @@
 #include <dataframe/functions/tail.hpp>
 #include <dataframe/functions/transform.hpp>
 #include <dataframe/functions/unqiue.hpp>
+#include <dataframe/functions/replace.hpp>
 
 #endif // AMT_DATAFRAME_FUNCTIONS_HPP

@@ -14,7 +14,7 @@ namespace amt {
 
 namespace fn {
 
-template <typename To, bool ApplyDefaultNaList> struct cast_t {
+template <typename To, bool ApplyDefaultNaList = true> struct cast_t {
 
     template <Box BoxType>
     constexpr BoxType operator()(BoxType const &b) const {
@@ -29,7 +29,11 @@ template <typename To, bool ApplyDefaultNaList> struct cast_t {
         if constexpr (ApplyDefaultNaList) {
             set_to_none(b, out, default_nan_list);
         }
-        return helper(out);
+        if( is<To>(b) ){
+            return out;
+        }else{
+            return helper(out);
+        }
     }
 
     template <Series SeriesType, Series OutSeriesType>
@@ -113,27 +117,23 @@ template <typename To, bool ApplyDefaultNaList> struct cast_t {
         return res;
     }
 
-    template <Box BoxType>
-    void set_to_none(BoxType const &in, BoxType &out, auto const &li) const {
+    template <Box BoxType, typename List>
+    void set_to_none(BoxType const &in, BoxType &out, List const &li) const {
         out = in;
-        std::string str;
-        for (auto const &el : li) {
-            if (is<std::string>(in) && (el == get<std::string>(in))) {
-                out = BoxType{};
-            } else {
-                box_type_for<BoxType>(
-                    [&out, &el, &str]<typename T>(T const &val) {
-                        if constexpr (conv::HasCast<std::string, T> &&
-                                      !is_std_string_v<T>) {
-                            if (conv::cast(str, val) && str == el) {
-                                out = BoxType{};
-                            }
-                        } else if constexpr (is_std_string_v<T>) {
-                            if (val == el) {
-                                out = BoxType{};
-                            }
-                        }
-                    });
+        if(li.empty()) return;
+        using value_type = typename List::value_type;
+        
+        if constexpr( std::is_constructible_v<std::string, value_type> ){
+            if(is<std::string>(in)){
+                if( auto it = std::find(li.begin(), li.end(), get<std::string>(in)); it != li.end() ){
+                    out = BoxType{};
+                }
+            }
+        }else{
+            if(is<value_type>(in)){
+                if( auto it = std::find(li.begin(), li.end(), get<value_type>(in)); it != li.end() ){
+                    out = BoxType{};
+                }
             }
         }
     }

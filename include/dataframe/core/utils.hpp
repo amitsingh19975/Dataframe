@@ -392,10 +392,10 @@ bool cast(bool &res, std::string_view val) {
     constexpr std::string_view lookup[2] = {"true", "false"};
 
     if (val.size() == 1u) {
-        if (val[0] == '0' || std::tolower(val[0]) == 'f') {
+        if (std::tolower(val[0]) == 'f') {
             res = false;
             return true;
-        } else if (val[0] == '1' || std::tolower(val[0]) == 't') {
+        } else if (std::tolower(val[0]) == 't') {
             res = true;
             return true;
         }
@@ -407,6 +407,7 @@ bool cast(bool &res, std::string_view val) {
             }
         }
         res = true;
+        return true;
     } else if (val.size() == 5u) {
         for (auto i = 0u; i < lookup[1].size(); ++i) {
             if (std::tolower(val[i]) != lookup[1][i]) {
@@ -414,8 +415,9 @@ bool cast(bool &res, std::string_view val) {
             }
         }
         res = false;
+        return true;
     }
-    return true;
+    return false;
 }
 
 bool cast(char &res, std::string_view val) {
