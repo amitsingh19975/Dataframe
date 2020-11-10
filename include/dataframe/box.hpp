@@ -79,6 +79,12 @@ template <typename... Ts> struct basic_box {
              !std::is_constructible_v<std::string, U>) constexpr basic_box &
     operator=(U u) {
         basic_box temp(::amt::dtype<>{m_index});
+        if constexpr( !Box<U> ){
+            if (m_index != 0u && m_index != type_index_v<U,basic_box>) {
+                throw std::runtime_error(
+                    ERR_CSTR("amt::basic_box& operator=(U u) : type mismatch"));
+            }
+        }
         temp.construct(std::move(u));
         std::swap(*this, temp);
         return *this;
