@@ -166,7 +166,6 @@ struct drop_row_t {
     SeriesType &
     operator()(SeriesType const &in, SeriesType &out, std::size_t s,
                std::size_t e = std::numeric_limits<std::size_t>::max()) const {
-        index_list ids;
         if (s > e) {
             throw std::runtime_error(ERR_CSTR(
                 "amt::drop_row::operator()(SeriesType const &, SeriesType "
@@ -250,7 +249,6 @@ struct drop_row_t {
     FrameType &
     operator()(FrameType const &in, FrameType &out, std::size_t s,
                std::size_t e = std::numeric_limits<std::size_t>::max()) const {
-        index_list ids;
         if (s > e) {
             throw std::runtime_error(ERR_CSTR(
                 "amt::drop_row::operator()(FrameType const &, FrameType "
