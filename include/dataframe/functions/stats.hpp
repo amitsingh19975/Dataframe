@@ -241,6 +241,9 @@ template <typename T = double>
 inline static constexpr auto sdev = fn::sdev_t<T>{};
 
 template <typename T = double>
+inline static constexpr auto var = fn::var_t<T>{};
+
+template <typename T = double>
 inline static constexpr auto skewness = fn::skewness_t<T>{};
 
 template <typename T = double>
