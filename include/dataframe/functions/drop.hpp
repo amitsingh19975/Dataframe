@@ -161,6 +161,46 @@ struct drop_row_t {
         return in;
     }
 
+    template <Series SeriesType>
+    SeriesType &
+    operator()(SeriesType const &in, SeriesType &out, std::size_t s,
+               std::size_t e = std::numeric_limits<std::size_t>::max()) const {
+        index_list ids;
+        if (s > e) {
+            throw std::runtime_error(ERR_CSTR(
+                "amt::drop_row::operator()(SeriesType const &, SeriesType "
+                "&,std::size_t, std::size_t) : start > end"));
+        }
+        if (s == e)
+            return out;
+
+        if (e == std::numeric_limits<std::size_t>::max()) {
+            e = in.size();
+        }
+
+        ids.resize(e - s);
+        std::fill(ids.begin(), ids.end(), s);
+        return this->operator()(in, out, ids);
+    }
+
+    template <Series SeriesType>
+    SeriesType
+    operator()(SeriesType const &in, std::size_t s,
+               std::size_t e = std::numeric_limits<std::size_t>::max()) const {
+        SeriesType temp(in.name());
+        this->operator()(in, temp, s, e);
+        return temp;
+    }
+
+    template <PureSeries SeriesType>
+    SeriesType &
+    operator()(SeriesType &in, tag::inplace_t, std::size_t s,
+               std::size_t e = std::numeric_limits<std::size_t>::max()) const {
+        auto temp = this->operator()(in, s, e);
+        in = std::move(temp);
+        return in;
+    }
+
     template <Frame FrameTypeIn, PureFrame FrameTypeOut>
     FrameTypeOut &operator()(FrameTypeIn const &in, FrameTypeOut &out,
                              index_list list) const {
@@ -196,6 +236,46 @@ struct drop_row_t {
     FrameTypeIn &operator()(FrameTypeIn &in, tag::inplace_t,
                             index_list list) const {
         auto temp = this->operator()(in, std::move(list));
+        in = std::move(temp);
+        return in;
+    }
+
+    template <Frame FrameType>
+    FrameType &
+    operator()(FrameType const &in, FrameType &out, std::size_t s,
+               std::size_t e = std::numeric_limits<std::size_t>::max()) const {
+        index_list ids;
+        if (s > e) {
+            throw std::runtime_error(ERR_CSTR(
+                "amt::drop_row::operator()(FrameType const &, FrameType "
+                "&,std::size_t, std::size_t) : start > end"));
+        }
+        if (s == e)
+            return out;
+
+        if (e == std::numeric_limits<std::size_t>::max()) {
+            e = in.rows();
+        }
+
+        ids.resize(e - s);
+        std::fill(ids.begin(), ids.end(), s);
+        return this->operator()(in, out, ids);
+    }
+
+    template <Frame FrameTypeIn>
+    frame_result_t<FrameTypeIn>
+    operator()(FrameTypeIn const &in, std::size_t s,
+               std::size_t e = std::numeric_limits<std::size_t>::max()) const {
+        frame_result_t<FrameTypeIn> temp;
+        this->operator()(in, temp, s, e);
+        return temp;
+    }
+
+    template <PureFrame FrameTypeIn>
+    FrameTypeIn &
+    operator()(FrameTypeIn &in, tag::inplace_t, std::size_t s,
+               std::size_t e = std::numeric_limits<std::size_t>::max()) const {
+        auto temp = this->operator()(in, s, e);
         in = std::move(temp);
         return in;
     }
