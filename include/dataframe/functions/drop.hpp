@@ -206,7 +206,7 @@ struct drop_row_t {
                              index_list list) const {
         normalize_list(list, in.rows());
         auto it = list.begin();
-        auto sz = in.size() - list.size();
+        auto sz = in.rows() - list.size();
         out = FrameTypeOut(in.cols(), sz);
         out.set_names(in);
 
@@ -303,7 +303,7 @@ struct drop_col_t {
                              index_list list) const {
         normalize_list(list, in.cols());
         auto it = list.begin();
-        auto sz = in.size() - list.size();
+        auto sz = in.cols() - list.size();
         out = FrameTypeOut(sz);
 
         auto k = 0u;
