@@ -170,7 +170,7 @@ template <Box ValueType> struct basic_series<ValueType> {
     }
 
     constexpr basic_series(amt::SeriesView auto &&s)
-        : m_data(s.size()), m_name(s.name()) {
+        : m_data(s.size()), m_name(s.name()), m_dtype(get<value_type>(s.dtype())) {
         parallel_copy(s.begin(), s.end(), begin());
     }
 

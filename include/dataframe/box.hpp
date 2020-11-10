@@ -342,6 +342,8 @@ template <typename... Ts> struct hash<::amt::basic_box<Ts...>> {
                           []<typename T>(T const &v) { return hash<T>{}(v); });
     }
 };
+
+template <typename... Ts> struct hash<::amt::basic_box<Ts...> const> : hash<::amt::basic_box<Ts...>>{};
 } // namespace std
 
 std::ostream &operator<<(std::ostream &os, amt::Box auto const &b) {

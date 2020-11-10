@@ -28,7 +28,7 @@ struct describe_t {
             all_metrics_init(temp, 2ul);
             this->all(in, temp[1]);
         }
-        return pretty_string(temp, 4u, false);
+        return pretty_string(temp, 4u, false, 30ul, false);
     }
 
     template <Frame FrameType>
@@ -42,7 +42,7 @@ struct describe_t {
             this->all(el, temp[i++]);
         }
 
-        return pretty_string(temp, 4u, false);
+        return pretty_string(temp, 4u, false, 30ul, false);
     }
 
   private:

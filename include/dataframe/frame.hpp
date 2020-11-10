@@ -44,7 +44,7 @@ template <Box BoxType> struct basic_frame<BoxType> {
     template <FrameView FrameType>
     requires(is_frame_same_v<FrameType, basic_frame>) constexpr basic_frame(
         FrameType &&fv)
-        : basic_frame(fv.shape()) {
+        : basic_frame(fv.cols()) {
         std::copy(fv.begin(), fv.end(), begin());
     }
 

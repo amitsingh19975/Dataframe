@@ -22,6 +22,7 @@ struct pretty_string_t {
         std::stringstream ss;
         m_row = should_row_number_be_shown;
         m_dtype = should_show_dtypes;
+        max_width = std::max(30ul, max_width);
         sstream(ss, in, indent, max_width);
         return ss.str();
     }
@@ -30,9 +31,9 @@ struct pretty_string_t {
     std::stringstream &sstream(std::stringstream &ss, FrameType const &in,
                                std::size_t indent = 4u,
                                std::size_t max_width = 30u) {
+        max_width = std::max(30ul, max_width);
         auto rows = in.rows();
         auto cols = in.cols();
-        max_width = std::max(30ul, max_width);
         auto sz = std::min(max_width, std::max(1ul, count_digit(rows)));
 
         std::vector<std::size_t> maxes(cols, 0u);
@@ -80,9 +81,9 @@ struct pretty_string_t {
     std::stringstream &sstream(std::stringstream &ss, SeriesType const &in,
                                std::size_t indent = 4u,
                                std::size_t max_width = 30u) {
+        max_width = std::max(30ul, max_width);
         auto sz = count_digit(in.size());
         auto dtype = type_to_string(in);
-        max_width = std::max(30ul, max_width);
         auto name_sz = std::min(max_width, std::max(in.name().size(), dtype.size() + 4ul));
         auto max = name_sz;
         std::vector<std::string> temp(in.size());
@@ -118,10 +119,11 @@ struct pretty_string_t {
         for (auto &el : temp) {
             auto dc = count_digit(i);
             add_eplison(el, max_width);
+            auto el_size = max < el.size() ? 0ul : max - el.size();
             if (m_row) {
                 m_ss << std::string(sz - dc, ' ') << i << sp;
             }
-            m_ss << std::string(max - el.size(), ' ') << std::move(el) << '\n';
+            m_ss << std::string(el_size, ' ') << std::move(el) << '\n';
             ++i;
         }
         m_ss.swap(ss);
@@ -228,7 +230,7 @@ struct pretty_string_t {
                     auto el = type_to_string(in[i]);
                     add_eplison_to_type(el,maxes[i]);
                     auto el_size = maxes[i] < ( el.size() + 4ul ) ? 0ul : maxes[i] - ( el.size() + 4ul );
-                    m_ss << std::string(el_size - 4ul, ' ') << "[ "<< el <<" ]" << sp;
+                    m_ss << std::string(el_size, ' ') << "[ "<< el <<" ]" << sp;
                 }
             }
 

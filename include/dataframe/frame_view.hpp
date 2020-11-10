@@ -367,6 +367,31 @@ template <Series ValueType> struct basic_frame_view<ValueType> {
         return {m_data, m_col_slice(cs), m_row_slice(rs), m_cols, m_rows};
     }
 
+    std::vector<::amt::dtype<>> vdtype() const {
+        std::vector<::amt::dtype<>> temp(cols());
+        for (auto i = 0u; i < temp.size(); ++i)
+            temp[i] = dtype(i);
+        return temp;
+    }
+
+    constexpr ::amt::dtype<> dtype(size_type k) const {
+        return m_data[k].dtype();
+    }
+
+    constexpr std::string_view name(size_type k) const {
+        return m_data[k].name();
+    }
+
+    name_list vnames() const {
+        name_list temp;
+        temp.reserve(cols());
+        for (auto const &el : m_data) {
+            temp.push_back(el.name());
+        }
+        return temp;
+    }
+
+
   private:
     series_pointer m_data;
     slice_type m_col_slice;
