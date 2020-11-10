@@ -10,6 +10,7 @@ namespace amt {
 
 template <Box ValueType> struct basic_series_view<ValueType, tag::col_t> {
 
+    using box_type = std::decay_t<ValueType>;
     using view_of = basic_series<ValueType>;
     using value_type = ValueType;
     using name_type = std::conditional_t<std::is_const_v<ValueType>,
@@ -211,7 +212,7 @@ template <Box ValueType> struct basic_series_view<ValueType, tag::col_t> {
         return *m_name;
     }
 
-    constexpr std::string &name() {
+    constexpr std::remove_pointer_t<name_type> &name() {
         if (m_name == nullptr) {
             throw std::runtime_error(ERR_CSTR(
                 "amt::basic_series_view::name() : dereferencing null pointer"));
@@ -270,7 +271,7 @@ template <Box ValueType> struct basic_series_view<ValueType, tag::col_t> {
 
     constexpr
     operator basic_series_view<ValueType const, tag::col_t>() const noexcept {
-        return {m_data, m_name, m_size, std::move(m_slice)};
+        return {m_data, m_name, m_size, m_dtype, m_slice};
     }
 
     template <PureSeries SeriesType> constexpr operator SeriesType() const {
@@ -303,6 +304,7 @@ template <Box ValueType> struct basic_series_view<ValueType, tag::col_t> {
 
 template <Series SeriesType> struct basic_series_view<SeriesType, tag::row_t> {
 
+    using box_type = typename std::decay_t<SeriesType>::box_type;
     using view_of = SeriesType;
     using name_type = std::string_view;
     using value_type = typename SeriesType::value_type;

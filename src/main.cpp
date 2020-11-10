@@ -26,8 +26,9 @@ int main(){
     // // amt::drop_nan(data,amt::tag::inplace);
     
     amt::pretty_string << std::setprecision(5) << std::fixed;
-    std::cout<<amt::pretty_string(data)<<'\n';
-    std::cout<<amt::info(data)<<'\n';
+    auto h = amt::head(data);
+    std::cout<<amt::pretty_string(h)<<'\n';
+    std::cout<<amt::info(h)<<'\n';
 
     // amt::frame f = {
     //     {"Test1",{1.,2.,3.345,4.}, amt::dtype<double>{}},
