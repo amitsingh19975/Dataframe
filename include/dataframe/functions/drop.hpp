@@ -12,6 +12,7 @@ struct drop_if_t {
     template <Series SeriesTypeIn, PureSeries SeriesTypeOut, typename Fn>
     constexpr SeriesTypeOut &operator()(SeriesTypeIn const &in,
                                         SeriesTypeOut &out, Fn &&fn) const {
+        out.dtype(in.dtype());
         filter(in, out, [fn = std::forward<Fn>(fn)](auto const &val) {
             return !visit(val, fn);
         });
@@ -209,6 +210,7 @@ struct drop_row_t {
         auto sz = in.rows() - list.size();
         out = FrameTypeOut(in.cols(), sz);
         out.set_names(in);
+        out.set_dtypes(in);
 
         auto k = 0u;
         for (auto i = 0u; i < in.rows(); ++i) {
@@ -216,6 +218,7 @@ struct drop_row_t {
                 ++it;
                 continue;
             }
+
             for (auto j = 0u; j < in.cols(); ++j) {
                 out[j][k] = in[j][i];
             }
