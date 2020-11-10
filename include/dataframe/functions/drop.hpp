@@ -178,10 +178,13 @@ struct drop_row_t {
         if (e == std::numeric_limits<std::size_t>::max()) {
             e = in.size();
         }
+        out.name(in.name());
+        out.dtype(in.dtype());
 
-        ids.resize(e - s);
-        std::fill(ids.begin(), ids.end(), s);
-        return this->operator()(in, out, ids);
+        auto it = std::copy(in.begin(), in.begin() + s, out.begin());
+        std::copy(in.begin() + e, in.end(), it);
+        
+        return out;
     }
 
     template <Series SeriesType>
@@ -259,10 +262,25 @@ struct drop_row_t {
         if (e == std::numeric_limits<std::size_t>::max()) {
             e = in.rows();
         }
+        out.resize(in.cols(), e - s);
+        out.set_names(in);
+        out.set_dtypes(in);
+        auto k = 0ul;
 
-        ids.resize(e - s);
-        std::fill(ids.begin(), ids.end(), s);
-        return this->operator()(in, out, ids);
+        for(auto i = 0ul; i < s; ++i) {
+            for(auto j = 0ul; j < in.cols(); ++j){
+                out[j][k] = in[j][i];
+            }
+            ++k;
+        }
+
+        for(auto i = e; i < in.rows(); ++i) {
+            for(auto j = 0ul; j < in.cols(); ++j){
+                out[j][k] = in[j][i];
+            }
+            ++k;
+        }
+        return out;
     }
 
     template <Frame FrameTypeIn>
