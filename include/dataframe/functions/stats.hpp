@@ -198,6 +198,26 @@ template <typename T = double> struct minmax_norm_t {
         this->operator()(in, in);
         return in;
     }
+
+    template <Frame FrameIn, Frame FrameOut>
+    constexpr FrameOut &operator()(FrameIn const &in, FrameOut &out) const {
+        transform(in, out,
+                  [this](auto &&s) { return this->operator()(s); });
+        return out;
+    }
+
+    template <Frame FrameIn>
+    constexpr FrameIn operator()(FrameIn const &in) const {
+        FrameIn temp(in.name(), in.size());
+        this->operator()(in, temp);
+        return temp;
+    }
+
+    template <Frame FrameIn>
+    constexpr FrameIn &operator()(FrameIn &in, tag::inplace_t) const {
+        this->operator()(in, in);
+        return in;
+    }
 };
 
 } // namespace fn
