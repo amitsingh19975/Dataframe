@@ -18,9 +18,10 @@ struct pretty_string_t {
     requires(Frame<DataFrame> || Series<DataFrame>) std::string
     operator()(DataFrame const &in, std::size_t indent = 4u,
                bool should_row_number_be_shown = true,
-               std::size_t max_width = 30u) {
+               std::size_t max_width = 30u, bool should_show_dtypes = true) {
         std::stringstream ss;
         m_row = should_row_number_be_shown;
+        m_dtype = should_show_dtypes;
         sstream(ss, in, indent, max_width);
         return ss.str();
     }
@@ -31,13 +32,15 @@ struct pretty_string_t {
                                std::size_t max_width = 30u) {
         auto rows = in.rows();
         auto cols = in.cols();
+        max_width = std::max(30ul, max_width);
         auto sz = std::min(max_width, std::max(1ul, count_digit(rows)));
 
         std::vector<std::size_t> maxes(cols, 0u);
         std::vector<std::string> temp(cols * rows);
 
-        for (auto i = 0u; i < cols; ++i)
-            maxes[i] = in[i].name().size();
+        for (auto i = 0u; i < cols; ++i){
+            maxes[i] = std::min( max_width, std::max(in[i].name().size(), type_to_string(in[i]).size() + 4u) );
+        }
 
         for (auto i = 0u; i < cols; ++i) {
             for (auto j = 0u; j < rows; ++j) {
@@ -58,24 +61,13 @@ struct pretty_string_t {
             }
             for (auto i = 0u; i < cols; ++i) {
                 auto str = std::move(temp[i * rows + j]);
-                if (str.size() > maxes[i]) {
-                    auto last = str.back();
-                    str = str.substr(0, maxes[i]);
-                    if (last == '"') {
-                        str[maxes[i] - 1] = '"';
-                        str[maxes[i] - 2] = '.';
-                        str[maxes[i] - 4] = '.';
-                    } else {
-                        str[maxes[i] - 1] = '.';
-                        str[maxes[i] - 2] = '.';
-                    }
-                    str[maxes[i] - 3] = '.';
-                }
+                add_eplison(str,maxes[i]);
+                auto str_sz = maxes[i] < str.size() ? 0u : maxes[i] - str.size();
                 if (m_row) {
-                    m_ss << sp << std::string(maxes[i] - str.size(), ' ')
+                    m_ss << sp << std::string(str_sz, ' ')
                          << str;
                 } else {
-                    m_ss << std::string(maxes[i] - str.size(), ' ') << str
+                    m_ss << std::string(str_sz, ' ') << str
                          << sp;
                 }
             }
@@ -89,10 +81,14 @@ struct pretty_string_t {
                                std::size_t indent = 4u,
                                std::size_t max_width = 30u) {
         auto sz = count_digit(in.size());
-        auto name_sz = std::min(max_width, in.name().size());
+        auto dtype = type_to_string(in);
+        max_width = std::max(30ul, max_width);
+        auto name_sz = std::min(max_width, std::max(in.name().size(), dtype.size() + 4ul));
         auto max = name_sz;
         std::vector<std::string> temp(in.size());
         auto i = 0u;
+
+        add_eplison_to_type(dtype,max_width);
 
         for (auto const &el : in) {
             convert_to_stringstream(el);
@@ -102,31 +98,26 @@ struct pretty_string_t {
             ++i;
         }
         auto sp = std::string(indent, ' ');
+        auto col_name = in.name();
+        add_eplison(col_name, max_width);
+        auto col_size = max < col_name.size() ? 0ul : max - col_name.size();
+        auto d_size = max < (dtype.size() + 4ul) ? 0ul: max - (dtype.size() + 4ul);
+
         if (m_row) {
             m_ss << std::string(sz - 1u, ' ') << "#" << sp;
-            m_ss << std::string(max - name_sz, ' ') << in.name() << '\n';
+            m_ss << std::string(col_size, ' ') << col_name << '\n';
+            m_ss << std::string(sz, ' ') << sp << std::string(d_size, ' ') << "[ " << dtype << " ]\n";
             m_ss << std::string(sz, '=') << sp << std::string(max, '=') << '\n';
         } else {
-            m_ss << std::string(max - name_sz, ' ') << in.name() << '\n';
+            m_ss << std::string(col_size, ' ') << col_name << '\n';
+            m_ss << std::string(d_size, ' ') << "[ " << dtype << " ]\n";
             m_ss << std::string(max, '=') << '\n';
         }
 
         i = 0u;
         for (auto &el : temp) {
             auto dc = count_digit(i);
-            if (el.size() > max) {
-                auto last = el.back();
-                el = el.substr(0, max);
-                if (last == '"') {
-                    el[max - 1] = '"';
-                    el[max - 2] = '.';
-                    el[max - 4] = '.';
-                } else {
-                    el[max - 1] = '.';
-                    el[max - 2] = '.';
-                }
-                el[max - 3] = '.';
-            }
+            add_eplison(el, max_width);
             if (m_row) {
                 m_ss << std::string(sz - dc, ' ') << i << sp;
             }
@@ -143,6 +134,34 @@ struct pretty_string_t {
     }
 
   private:
+    
+    std::string& add_eplison(std::string& el, std::size_t max_width) const{
+        if( el.size() > max_width ){
+            el = el.substr(0, max_width);
+            auto last = el.back();
+            if (last == '"') {
+                el[max_width - 1] = '"';
+                el[max_width - 2] = '.';
+                el[max_width - 4] = '.';
+            } else {
+                el[max_width - 1] = '.';
+                el[max_width - 2] = '.';
+            }
+            el[max_width - 3] = '.';
+        }
+        return el;
+    }
+    
+    std::string& add_eplison_to_type(std::string& s, std::size_t max_width) const{
+        if( s.size() > max_width - 4ul ){
+            s = s.substr(0, max_width - 4u);
+            s[s.size() - 1u] = '.';
+            s[s.size() - 2u] = '.';
+            s[s.size() - 3u] = '.';
+        }
+        return s;
+    }
+
     template <typename T>
     requires(std::is_integral_v<T>) constexpr std::size_t
         count_digit(T val) const noexcept {
@@ -175,16 +194,44 @@ struct pretty_string_t {
             m_ss << std::string(sz - 1u, ' ') << '#';
 
             for (auto i = 0u; i < cols; ++i) {
-                auto &el = in[i].name();
-                m_ss << sp << std::string(maxes[i] - el.size(), ' ') << el;
+                auto el = in[i].name();
+                add_eplison(el,maxes[i]);
+                auto el_size = maxes[i] < el.size() ? 0ul : maxes[i] - el.size();
+                m_ss << sp << std::string(el_size, ' ') << el;
+            }
+
+            if( m_dtype ){
+                m_ss << '\n' << std::string(sz, ' ');
+
+                for (auto i = 0u; i < cols; ++i) {
+                    auto el = type_to_string(in[i]);
+                    add_eplison_to_type(el,maxes[i]);
+                    auto el_size = maxes[i] < ( el.size() + 4ul ) ? 0ul : maxes[i] - ( el.size() + 4ul );
+                    m_ss << sp << std::string(el_size, ' ') << "[ "<< el <<" ]";
+                }
             }
 
             m_ss << '\n' << std::string(sz, '=') << sp;
         } else {
+            
             for (auto i = 0u; i < cols; ++i) {
-                auto &el = in[i].name();
-                m_ss << std::string(maxes[i] - el.size(), ' ') << el << sp;
+                auto el = in[i].name();
+                add_eplison(el,maxes[i]);
+                auto el_size = maxes[i] < el.size() ? 0ul : maxes[i] - el.size();
+                m_ss << std::string(el_size, ' ') << el << sp;
             }
+
+            if( m_dtype ){
+                m_ss << '\n';
+
+                for (auto i = 0u; i < cols; ++i) {
+                    auto el = type_to_string(in[i]);
+                    add_eplison_to_type(el,maxes[i]);
+                    auto el_size = maxes[i] < ( el.size() + 4ul ) ? 0ul : maxes[i] - ( el.size() + 4ul );
+                    m_ss << std::string(el_size - 4ul, ' ') << "[ "<< el <<" ]" << sp;
+                }
+            }
+
             m_ss << '\n';
         }
 
@@ -195,7 +242,8 @@ struct pretty_string_t {
 
   private:
     std::stringstream m_ss;
-    bool m_row{false};
+    bool m_row{true};
+    bool m_dtype{true};
 };
 
 } // namespace fn

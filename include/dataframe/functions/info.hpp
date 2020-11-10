@@ -27,7 +27,7 @@ struct info_t {
         temp[1][0] = in.size() - sz;
         temp[2][0] = type_to_string(in);
 
-        return pretty_string(temp);
+        return pretty_string(temp, 4u, true, 30u, false);
     }
 
     template <Frame FrameType>
@@ -47,7 +47,7 @@ struct info_t {
             ++i;
         }
 
-        return pretty_string(temp);
+        return pretty_string(temp, 4u, true, 30u, false);
     }
 
   private:

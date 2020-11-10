@@ -27,7 +27,7 @@ int main(){
     
     amt::pretty_string << std::setprecision(5) << std::fixed;
     auto h = amt::head(data);
-    std::cout<<amt::pretty_string(h)<<'\n';
+    std::cout<<amt::pretty_string(h,4u, true, 3u)<<'\n';
     std::cout<<amt::info(h)<<'\n';
 
     // amt::frame f = {
