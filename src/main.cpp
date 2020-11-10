@@ -2,7 +2,6 @@
 #include <numeric>
 #include <algorithm>
 #include <dataframe.hpp>
-#include <dataframe/parser/csv.hpp>
 
 void print(std::unordered_set<amt::box> const& s){
     for(auto const& el : s){
@@ -26,9 +25,8 @@ int main(){
     // // amt::drop_nan(data,amt::tag::inplace);
     
     amt::pretty_string << std::setprecision(5) << std::fixed;
-    amt::frame h = amt::head(data);
-    std::cout<<amt::pretty_string(h, 4u, true, 3u)<<'\n';
-    std::cout<<amt::describe(h)<<'\n';
+    std::cout<<amt::pretty_string(data)<<'\n';
+    std::cout<<amt::describe(data)<<'\n';
 
     // amt::frame f = {
     //     {"Test1",{1.,2.,3.345,4.}, amt::dtype<double>{}},
