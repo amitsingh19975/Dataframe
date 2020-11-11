@@ -21,12 +21,19 @@ int main(){
     amt::replace(data["Alley"], amt::tag::inplace, { {"NA", "NAA"} });
 
     amt::infer<>(data,amt::tag::inplace);
-    // // amt::imputer.mean(data["LotFrontage"],amt::tag::inplace, amt::tag::nan);
+    // amt::imputer.mean(data["LotFrontage"],amt::tag::inplace, amt::tag::nan);
     // // amt::drop_nan(data,amt::tag::inplace);
     
-    amt::pretty_string << std::setprecision(5) << std::fixed;
-    std::cout<<amt::pretty_string(data)<<'\n';
-    std::cout<<amt::describe(data)<<'\n';
+    // amt::pretty_string << std::setprecision(5) << std::fixed;
+    // std::cout<<amt::pretty_string(data)<<'\n';
+    // std::cout<<amt::describe(data)<<'\n';
+
+    auto v = amt::to_vector<int64_t>(data["MSSubClass"]);
+    std::cout<<"[ ";
+    for(auto const& el : v){
+        std::cout<<el<<", ";
+    }
+    std::cout<<"]\n";
 
     // amt::frame f = {
     //     {"Test1",{1.,2.,3.345,4.}, amt::dtype<double>{}},
