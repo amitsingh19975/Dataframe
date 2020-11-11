@@ -177,6 +177,8 @@ struct drop_row_t {
         if (e == std::numeric_limits<std::size_t>::max()) {
             e = in.size();
         }
+        auto diff = e - s;
+        out.resize(in.size() - diff);
         out.name(in.name());
         out.dtype(in.dtype());
 
@@ -260,22 +262,25 @@ struct drop_row_t {
         if (e == std::numeric_limits<std::size_t>::max()) {
             e = in.rows();
         }
-        out.resize(in.cols(), e - s);
+        auto diff = e - s;
+        out.resize(in.cols(), in.rows() - diff);
         out.set_names(in);
         out.set_dtypes(in);
         auto k = 0ul;
-
-        for(auto i = 0ul; i < s; ++i) {
+        auto i = 0ul;
+        
+        while(i < s){
             for(auto j = 0ul; j < in.cols(); ++j){
                 out[j][k] = in[j][i];
             }
             ++k;
+            ++i;
         }
-
-        for(auto i = e; i < in.rows(); ++i) {
+        while(e < in.rows()){
             for(auto j = 0ul; j < in.cols(); ++j){
-                out[j][k] = in[j][i];
+                out[j][k] = in[j][e];
             }
+            ++e;
             ++k;
         }
         return out;
