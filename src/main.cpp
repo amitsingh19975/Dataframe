@@ -37,7 +37,7 @@ int main(){
     // std::cout<<amt::describe(data)<<'\n';
 
     amt::frame f = {
-        { "Day", {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}, amt::dtype<std::int64_t>{} },
+        // { "Day", {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}, amt::dtype<std::int64_t>{} },
         { "Outlook", {"Sunny", "Sunny", "Overcast", "Rain", "Rain", "Rain", "Overcast", "Sunny", "Sunny", "Rain", "Sunny", "Overcast", "Overcast", "Rain"}, amt::dtype<std::string>{} },
         { "Temperature", {"Hot", "Hot", "Hot", "Mild", "Cool", "Cool", "Cool", "Mild", "Cool", "Mild", "Mild", "Mild", "Hot", "Mild"}, amt::dtype<std::string>{} },
         { "Humidity", {"High", "High", "High", "High", "Normal", "Normal", "Normal", "High", "Normal", "Normal", "Normal", "High", "Normal", "High"}, amt::dtype<std::string>{} },
@@ -71,6 +71,8 @@ int main(){
         print_v(el);
         std::cout<<"]\n";
     }
+
+    std::cout<<amt::filter[2u](f, amt::equal(0.))<<'\n';
 
     return 0;
 }

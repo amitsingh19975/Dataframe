@@ -24,7 +24,7 @@ struct column_t {
 
     constexpr bool has_index() const noexcept { return m_idx != npos; }
 
-    constexpr bool index() const noexcept { return m_idx; }
+    constexpr std::size_t index() const noexcept { return m_idx; }
 
     constexpr std::string_view name() const noexcept { return m_col_name; }
 
