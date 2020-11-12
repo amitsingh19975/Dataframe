@@ -23,5 +23,7 @@
 #include <dataframe/functions/unqiue.hpp>
 #include <dataframe/functions/replace.hpp>
 #include <dataframe/functions/to_vector.hpp>
+#include <dataframe/functions/factorize.hpp>
+#include <dataframe/functions/get_dummies.hpp>
 
 #endif // AMT_DATAFRAME_FUNCTIONS_HPP

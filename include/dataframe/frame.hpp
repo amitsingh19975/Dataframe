@@ -145,10 +145,10 @@ template <Box BoxType> struct basic_frame<BoxType> {
     constexpr iterator col_insert(const_iterator pos, InputIt first,
                                   InputIt last) {
         if (!empty() &&
-            static_cast<size_type>(std::distance(first, last)) != rows()) {
+            static_cast<size_type>(std::distance(first, last)) != cols()) {
             throw std::length_error(
                 ERR_CSTR("amt::basic_frame::col_insert(const_iterator, "
-                         "InputIt, InputIt) : rows mismatch"));
+                         "InputIt, InputIt) : cols mismatch"));
         }
         return m_data.insert(pos, first, last);
     }
@@ -486,7 +486,7 @@ template <Box BoxType> struct basic_frame<BoxType> {
         return m_data[k].name();
     }
 
-    constexpr void name(size_type k, std::string_view name) const {
+    constexpr void name(size_type k, std::string_view name) {
         return m_data[k].name(name);
     }
 

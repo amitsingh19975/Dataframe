@@ -36,10 +36,6 @@ struct transform_t {
     constexpr SeriesType3 &operator()(SeriesType1 const &in1,
                                       SeriesType2 const &in2, SeriesType3 &out,
                                       Fn &&fn) const {
-        out.name(in1.name());
-        if constexpr (PureSeries<SeriesType3>) {
-            detail::set_dtype(out, in1.dtype());
-        }
         parallel_transform(in1.begin(), in1.end(), in2.begin(), out.begin(),
                            std::forward<Fn>(fn));
         return out;
@@ -47,7 +43,7 @@ struct transform_t {
 
     template <Series SeriesType, typename Fn>
     constexpr SeriesType operator()(SeriesType const &in, Fn &&fn) const {
-        SeriesType temp(in.size());
+        series_result_t<SeriesType> temp(in.name(), in.size(), in.dtype());
         this->operator()(in, temp, std::forward<Fn>(fn));
         return temp;
     }
@@ -75,8 +71,9 @@ struct transform_t {
 
     template <Frame FrameType, typename Fn>
     constexpr FrameType operator()(FrameType const &in, Fn &&fn) const {
-        FrameType temp(in.shape());
+        frame_result_t<FrameType> temp(in.shape());
         temp.set_names(in);
+        temp.set_dtypes(in);
         this->operator()(in, temp, std::forward<Fn>(fn));
         return temp;
     }
@@ -93,7 +90,6 @@ struct transform_t {
     constexpr FrameType3 &operator()(FrameType1 const &in1,
                                      FrameType2 const &in2, FrameType3 &out,
                                      Fn &&fn) const {
-
         frame_fn(in1.begin(), in1.end(), in2.begin(), out.begin(),
                  std::forward<Fn>(fn));
         return out;
@@ -102,9 +98,10 @@ struct transform_t {
     template <Frame FrameType1, Frame FrameType2, typename Fn>
     constexpr auto operator()(FrameType1 const &in1, FrameType2 const &in2,
                               Fn &&fn) const {
-        using return_type = series_result_t<FrameType1, FrameType2>;
+        using return_type = frame_result_t<FrameType1, FrameType2>;
         return_type temp(in1.shape());
         temp.set_names(in1);
+        temp.set_dtypes(in1);
         this->operator()(in1, in2, temp, std::forward<Fn>(fn));
         return temp;
     }

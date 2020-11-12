@@ -68,6 +68,10 @@ constexpr bool is_string(Series auto const &s) noexcept {
     return holds_type<std::string>(s);
 }
 
+constexpr bool is_categorical(Series auto const &s) noexcept {
+    return !(is_integer(s) || is_floating_point(s));
+}
+
 namespace detail {
 constexpr void set_dtype(Series auto &s, DType auto d) noexcept {
     using box_type = typename std::decay_t<decltype(s)>::value_type;

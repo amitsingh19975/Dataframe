@@ -114,6 +114,10 @@ constexpr bool is_nan(Box auto const &b) noexcept {
     return visit(b, [](auto &&val) { return val != val; });
 }
 
+constexpr bool is_categorical(Box auto const &b) noexcept {
+    return !(is_integer(b) || is_floating_point(b));
+}
+
 template <Box BoxType> constexpr std::size_t get(DType auto d) noexcept {
     return d.template id<BoxType>();
 }
