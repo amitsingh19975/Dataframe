@@ -16,6 +16,13 @@ void print(std::unordered_map<amt::box,std::size_t> const& s){
     }
 }
 
+template<typename T>
+void print_v(std::vector<T> const& v){
+    for(auto const& el : v){
+        std::cout<< el <<", ";
+    }
+}
+
 int main(){
     // std::string_view filename = "/Users/amit/Downloads/house-prices-advanced-regression-techniques/test.csv";
     // auto data = amt::read_csv(filename, true);
@@ -53,8 +60,17 @@ int main(){
     // print(rain_plays);
     // std::cout<<amt::pretty_string(over)<<'\n';
     // print(over_plays);
-    auto temp = amt::get_dummies<>["Temperature"](f, false);
-    std::cout<<amt::pretty_string(temp)<<'\n';
+    std::vector< std::vector<amt::box> > mp(f.cols());
+    for(auto i = 0ul; i < f.cols(); ++i){
+        auto [cat, _] = amt::factorize<>(f[i], amt::tag::inplace);
+        mp[i] = std::move(cat);
+    }
+
+    for(auto const& el : mp) {
+        std::cout<<"[ ";
+        print_v(el);
+        std::cout<<"]\n";
+    }
 
     return 0;
 }

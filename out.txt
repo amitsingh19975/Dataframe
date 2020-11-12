@@ -15,20 +15,9 @@
 11           12         "Overcast"             "Mild"             "High"           "Strong"              "Yes"
 12           13         "Overcast"              "Hot"           "Normal"             "Weak"              "Yes"
 13           14             "Rain"             "Mild"             "High"           "Strong"               "No"
- #          Day            Outlook          Cool          Mild           Hot           Humidity               Wind              Plays
-      [ int64 ]    [ std::string ]    [ double ]    [ double ]    [ double ]    [ std::string ]    [ std::string ]    [ std::string ]
-==    =========    ===============    ==========    ==========    ==========    ===============    ===============    ===============    
- 0            1            "Sunny"             0             0             1             "High"             "Weak"               "No"
- 1            2            "Sunny"             0             0             1             "High"           "Strong"               "No"
- 2            3         "Overcast"             0             0             1             "High"             "Weak"              "Yes"
- 3            4             "Rain"             0             1             0             "High"             "Weak"              "Yes"
- 4            5             "Rain"             1             0             0           "Normal"             "Weak"              "Yes"
- 5            6             "Rain"             1             0             0           "Normal"           "Strong"               "No"
- 6            7         "Overcast"             1             0             0           "Normal"           "Strong"              "Yes"
- 7            8            "Sunny"             0             1             0             "High"             "Weak"               "No"
- 8            9            "Sunny"             1             0             0           "Normal"             "Weak"              "Yes"
- 9           10             "Rain"             0             1             0           "Normal"             "Weak"              "Yes"
-10           11            "Sunny"             0             1             0           "Normal"           "Strong"              "Yes"
-11           12         "Overcast"             0             1             0             "High"           "Strong"              "Yes"
-12           13         "Overcast"             0             0             1           "Normal"             "Weak"              "Yes"
-13           14             "Rain"             0             1             0             "High"           "Strong"               "No"
+[ 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, ]
+[ "Overcast", "Rain", "Sunny", ]
+[ "Cool", "Mild", "Hot", ]
+[ "Normal", "High", ]
+[ "Strong", "Weak", ]
+[ "Yes", "No", ]

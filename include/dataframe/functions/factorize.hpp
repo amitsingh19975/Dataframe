@@ -37,14 +37,14 @@ struct factorize_t {
     }
     
     template<Series SeriesIn, typename BoxType = typename SeriesIn::box_type>
-    constexpr std::pair< std::vector<BoxType>, series_result_t<SeriesIn> > operator()(SeriesIn const& in, long long na_sentinel = -1) const{
-        series_result_t<SeriesIn> out(in.name(), in.size(), dtype<long long>());
+    constexpr std::pair< std::vector<BoxType>, series_result_t<SeriesIn> > operator()(SeriesIn const& in, DataType na_sentinel = -1) const{
+        series_result_t<SeriesIn> out(in.name(), in.size(), dtype<DataType>());
         auto [cat,_] = this->operator()(in, out, na_sentinel);
         return { std::move(cat), std::move(out) };
     }
 
     template<PureSeries SeriesIn, typename BoxType = typename SeriesIn::box_type>
-    constexpr std::pair< std::vector<BoxType>, SeriesIn& > operator()(SeriesIn& in, tag::inplace_t, long long na_sentinel = -1) const{
+    constexpr std::pair< std::vector<BoxType>, SeriesIn& > operator()(SeriesIn& in, tag::inplace_t, DataType na_sentinel = -1) const{
         auto [cat, out] = this->operator()(in, na_sentinel);
         in = std::move(out);
         return { std::move(cat), in };
