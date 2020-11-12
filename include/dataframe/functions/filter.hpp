@@ -2,14 +2,63 @@
 #define AMT_DATAFRAME_FUNCTIONS_FILTER_HPP
 
 #include <dataframe/core/tag.hpp>
+#include <dataframe/core/compare.hpp>
 #include <dataframe/series_utils.hpp>
 #include <dataframe/traits/frame_traits.hpp>
 #include <dataframe/traits/series_traits.hpp>
+#include <dataframe/functions/column.hpp>
 #include <functional>
 
 namespace amt {
 
 namespace fn {
+
+struct filter_col_t : column_t{
+
+    template<typename... Ts>
+    constexpr filter_col_t(Ts&&... args) noexcept
+        : column_t(std::forward<Ts>(args)...)
+    {}
+
+    template<Frame FrameType, PureFrame FrameOut, typename Fn>
+    constexpr FrameOut& operator()(FrameType const& in, FrameOut& out, Fn&& fn) const{
+        out.set_names(in);
+        out.set_dtypes(in);
+        
+        if ( has_index() ){
+            auto const& s = in[index()];
+            for(auto i = 0ul; i < s.size(); ++i){
+                auto const& el = s[i];
+                if( std::invoke(std::forward<Fn>(fn), el) ){
+                    out.row_push_back(in.get_row(i));
+                }
+            }
+        }else{
+            auto const& s = in[name()];
+            for(auto i = 0ul; i < s.size(); ++i){
+                auto const& el = s[i];
+                if( std::invoke(std::forward<Fn>(fn), el) ){
+                    out.row_push_back(in.get_row(i));
+                }
+            }
+        }
+        return out;
+    }
+
+    template<Frame FrameType, typename Fn>
+    constexpr frame_result_t<FrameType> operator()(FrameType const& in, Fn&& fn) const{
+        frame_result_t<FrameType> out(in.cols());
+        this->operator()(in, out, std::forward<Fn>(fn));
+        return out;
+    }
+
+    template<PureFrame FrameType, typename Fn>
+    constexpr FrameType& operator()(FrameType& in, tag::inplace_t, Fn&& fn) const{
+        auto out = this->operator()(in, std::forward<Fn>(fn));
+        in = std::move(out);
+        return in;
+    }
+};
 
 struct filter_t {
 
@@ -100,6 +149,11 @@ struct filter_t {
         return in;
     }
 
+    template<typename T>
+    constexpr filter_col_t operator[](T&& key) const noexcept{
+        return {std::forward<T>(key)};
+    }
+
   private:
     template <typename InputIt, typename OutputIt, typename Fn>
     requires(!Frame<Fn> ||
@@ -138,7 +192,9 @@ struct filter_t {
     requires(!Frame<Fn> || !Series<Fn>) constexpr void using_fn(
         FrameIn const &in, FrameOut &out, Fn &&fn) const {
 
-        out.resize(out.cols());
+        out.resize(in.cols());
+        out.set_names(in);
+        out.set_dtypes(in);
 
         for (auto i = 0u; i < in.rows(); ++i) {
             auto temp = in.get_row(i);
@@ -164,7 +220,9 @@ struct filter_t {
                          "BoolFrame const&) : shape mismatch"));
         }
 
-        out.resize(out.cols());
+        out.resize(in.cols());
+        out.set_names(in);
+        out.set_dtypes(in);
 
         for (auto i = 0u; i < in.rows(); ++i) {
             bool should_be_inserted = false;
@@ -189,15 +247,15 @@ struct filter_t {
                          "BoolFrame const&) : rows mismatch"));
         }
 
-        out.resize(out.cols());
+        out.resize(in.cols());
+        out.set_names(in);
+        out.set_dtypes(in);
 
         for (auto i = 0u; i < in.rows(); ++i) {
             bool should_be_inserted = bf[i];
 
             if (should_be_inserted) {
-                for (auto j = 0u; j < in.cols(); ++j) {
-                    out[j].push_back(in[i][j]);
-                }
+                out.row_push_back(in.get_row(i));
             }
         }
     }

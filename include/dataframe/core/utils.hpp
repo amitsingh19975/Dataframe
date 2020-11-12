@@ -210,6 +210,13 @@ requires is_tuple_v<TupleTraits> constexpr auto tuple_for(Fn &&fn) noexcept {
             std::tuple_size_v<std::decay_t<TupleTraits>>>{});
 }
 
+template <std::size_t Size, typename Fn>
+constexpr auto static_for(Fn &&fn) noexcept {
+    detail::tuple_for_helper(
+        std::forward<Fn>(fn),
+        std::make_index_sequence<Size>{});
+}
+
 namespace conv {
 
 std::optional<float> to_float(std::string_view s) {
