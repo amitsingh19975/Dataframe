@@ -486,6 +486,12 @@ template <Box BoxType> struct basic_frame<BoxType> {
         return m_data[k].name();
     }
 
+    constexpr bool has_name(std::string_view k) const {
+        return std::find_if(begin(), end(), [k](auto const& s){
+            return s.name() == k;
+        }) != end();
+    }
+
     constexpr void name(size_type k, std::string_view name) {
         return m_data[k].name(name);
     }
