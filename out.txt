@@ -15,15 +15,10 @@
 11         "Overcast"             "Mild"             "High"           "Strong"              "Yes"
 12         "Overcast"              "Hot"           "Normal"             "Weak"              "Yes"
 13             "Rain"             "Mild"             "High"           "Strong"               "No"
-[ "Overcast", "Rain", "Sunny", ]
-[ "Cool", "Mild", "Hot", ]
-[ "Normal", "High", ]
-[ "Strong", "Weak", ]
-[ "Yes", "No", ]
 {
-    ( Name: "Outlook", Type: double )[ 1, 1, 0, 2, 1, 2, 0 ]
-    ( Name: "Temperature", Type: double )[ 0, 0, 0, 0, 1, 1, 2 ]
-    ( Name: "Humidity", Type: double )[ 0, 0, 0, 0, 0, 0, 0 ]
-    ( Name: "Wind", Type: double )[ 1, 0, 0, 1, 1, 0, 1 ]
-    ( Name: "Plays", Type: double )[ 0, 1, 0, 0, 0, 0, 0 ]
+    ( Name: "Outlook", Type: std::string )[ "Overcast", "Rain", "Rain", "Overcast", "Sunny", "Rain", "Sunny", "Overcast", "Overcast" ]
+    ( Name: "Temperature", Type: std::string )[ "Hot", "Mild", "Cool", "Cool", "Cool", "Mild", "Mild", "Mild", "Hot" ]
+    ( Name: "Humidity", Type: std::string )[ "High", "High", "Normal", "Normal", "Normal", "Normal", "Normal", "High", "Normal" ]
+    ( Name: "Wind", Type: std::string )[ "Weak", "Weak", "Weak", "Strong", "Weak", "Weak", "Strong", "Strong", "Weak" ]
+    ( Name: "Plays", Type: std::string )[ "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes" ]
 }

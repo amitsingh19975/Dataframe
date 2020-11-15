@@ -60,19 +60,19 @@ int main(){
     // print(rain_plays);
     // std::cout<<amt::pretty_string(over)<<'\n';
     // print(over_plays);
-    std::vector< std::vector<amt::box> > mp(f.cols());
-    for(auto i = 0ul; i < f.cols(); ++i){
-        auto [cat, _] = amt::factorize<>(f[i], amt::tag::inplace);
-        mp[i] = std::move(cat);
-    }
+    // std::vector< std::vector<amt::box> > mp(f.cols());
+    // for(auto i = 0ul; i < f.cols(); ++i){
+    //     auto [cat, _] = amt::factorize<>(f[i], amt::tag::inplace);
+    //     mp[i] = std::move(cat);
+    // }
 
-    for(auto const& el : mp) {
-        std::cout<<"[ ";
-        print_v(el);
-        std::cout<<"]\n";
-    }
+    // for(auto const& el : mp) {
+    //     std::cout<<"[ ";
+    //     print_v(el);
+    //     std::cout<<"]\n";
+    // }
 
-    std::cout<<amt::filter[2u](f, amt::equal(0.))<<'\n';
+    std::cout<<amt::filter(2u,4u)(f, ( amt::equal("High") || amt::equal("Normal") ) &&  amt::equal(1ul, "Yes"))<<'\n';
 
     return 0;
 }

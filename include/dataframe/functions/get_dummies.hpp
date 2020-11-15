@@ -7,7 +7,7 @@
 #include <dataframe/functions/unqiue.hpp>
 #include <dataframe/functions/transform.hpp>
 #include <dataframe/functions/cast.hpp>
-#include <dataframe/functions/column.hpp>
+#include <dataframe/core/column.hpp>
 #include <vector>
 
 namespace amt {
@@ -15,22 +15,24 @@ namespace amt {
 namespace fn {
 
 template<typename GetDummies>
-struct get_dummies_col_t : column_t{
+struct get_dummies_col_t : column_t<1u>{
+
+    using super_type = column_t<1u>;
 
     template<typename... Ts>
     constexpr get_dummies_col_t(Ts&&... args) noexcept
-        : column_t(std::forward<Ts>(args)...)
+        : super_type(std::forward<Ts>(args)...)
     {}
 
     template<Frame FrameType, PureFrame FrameOut>
     constexpr FrameOut& operator()(FrameType const& in, FrameOut& out, bool drop_first = false) const{
         out.set_dtypes(in);
         std::size_t id{};
-        if ( has_index() ){
-            id = index();
+        if ( has_index(0u) ){
+            id = index(0u);
         }else{
             for(auto const& s : in){
-                if( s.name() == name() ) break;
+                if( s.name() == name(0u) ) break;
                 ++id;
             }
         }

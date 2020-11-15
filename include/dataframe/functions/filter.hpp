@@ -1,65 +1,77 @@
 #if !defined(AMT_DATAFRAME_FUNCTIONS_FILTER_HPP)
 #define AMT_DATAFRAME_FUNCTIONS_FILTER_HPP
 
-#include <dataframe/core/tag.hpp>
 #include <dataframe/core/compare.hpp>
+#include <dataframe/core/tag.hpp>
+#include <dataframe/core/column.hpp>
 #include <dataframe/series_utils.hpp>
 #include <dataframe/traits/frame_traits.hpp>
 #include <dataframe/traits/series_traits.hpp>
-#include <dataframe/functions/column.hpp>
 #include <functional>
 
 namespace amt {
 
 namespace fn {
 
-struct filter_col_t : column_t{
+template <std::size_t N> struct filter_col_t : column_t<N> {
 
-    template<typename... Ts>
-    constexpr filter_col_t(Ts&&... args) noexcept
-        : column_t(std::forward<Ts>(args)...)
-    {}
+    using super_type = column_t<N>;
 
-    template<Frame FrameType, PureFrame FrameOut, typename Fn>
-    constexpr FrameOut& operator()(FrameType const& in, FrameOut& out, Fn&& fn) const{
+    template <typename... Ts>
+    constexpr filter_col_t(Ts &&... args) noexcept
+        : super_type(std::forward<Ts>(args)...) {}
+
+    template <Frame FrameType, PureFrame FrameOut, typename Fn>
+    constexpr FrameOut &operator()(FrameType const &in, FrameOut &out,
+                                   Fn && fn) const {
+        
         out.set_names(in);
         out.set_dtypes(in);
-        
-        if ( has_index() ){
-            auto const& s = in[index()];
-            for(auto i = 0ul; i < s.size(); ++i){
+
+        auto ids = super_type::get_indices(in);
+
+        for (auto i = 0ul; i < in.rows(); ++i) {
+            if constexpr( HasStoreResult<Fn> ){
+                auto const& s = ids[0];
                 auto const& el = s[i];
-                if( std::invoke(std::forward<Fn>(fn), el) ){
+                if (std::invoke(std::forward<Fn>(fn), el)) {
+                    out.row_push_back(in.get_row(i));
+                }
+
+            }else{
+                for(auto j = 0ul; j < ids.size(); ++j){
+                    auto const &el = in[ids[j]][i];
+                    fn.store_result(j,el);
+                }
+
+                if (std::invoke(std::forward<Fn>(fn))) {
                     out.row_push_back(in.get_row(i));
                 }
             }
-        }else{
-            auto const& s = in[name()];
-            for(auto i = 0ul; i < s.size(); ++i){
-                auto const& el = s[i];
-                if( std::invoke(std::forward<Fn>(fn), el) ){
-                    out.row_push_back(in.get_row(i));
-                }
-            }
+
         }
+        
         return out;
     }
 
-    template<Frame FrameType, typename Fn>
-    constexpr frame_result_t<FrameType> operator()(FrameType const& in, Fn&& fn) const{
+    template <Frame FrameType, typename Fn>
+    constexpr frame_result_t<FrameType> operator()(FrameType const &in,
+                                                   Fn &&fn) const {
         frame_result_t<FrameType> out(in.cols());
         this->operator()(in, out, std::forward<Fn>(fn));
         return out;
     }
 
-    template<PureFrame FrameType, typename Fn>
-    constexpr FrameType& operator()(FrameType& in, tag::inplace_t, Fn&& fn) const{
+    template <PureFrame FrameType, typename Fn>
+    constexpr FrameType &operator()(FrameType &in, tag::inplace_t,
+                                    Fn &&fn) const {
         auto out = this->operator()(in, std::forward<Fn>(fn));
         in = std::move(out);
         return in;
     }
 };
 
+template <typename... Ts> filter_col_t(Ts &&...) -> filter_col_t<sizeof...(Ts)>;
 struct filter_t {
 
     template <Series SeriesIn, PureSeries SeriesOut, typename Fn>
@@ -149,9 +161,15 @@ struct filter_t {
         return in;
     }
 
-    template<typename T>
-    constexpr filter_col_t operator[](T&& key) const noexcept{
+    template <typename T>
+    constexpr filter_col_t<1> operator[](T &&key) const noexcept {
         return {std::forward<T>(key)};
+    }
+
+    template <typename... Args>
+    requires( (ColumnKey<Args> && ... && (sizeof...(Args) > 0ul) ) )
+    constexpr filter_col_t<sizeof...(Args)> operator()(Args &&... args) const noexcept {
+        return {std::forward<Args>(args)...};
     }
 
   private:
