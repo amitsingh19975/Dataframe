@@ -11,14 +11,15 @@ namespace amt {
 
 namespace fn {
 
-template<typename DataType = double>
+template<typename DataType = double, bool Sorted = false>
 struct factorize_t {
     
     static_assert(std::numeric_limits<DataType>::is_signed);
 
     template<Series SeriesIn, PureSeries SeriesOut, typename BoxType = typename SeriesIn::box_type>
     constexpr std::pair< std::vector<BoxType>, SeriesOut& > operator()(SeriesIn const& in, SeriesOut& out, DataType na_sentinel = -1) const{
-        auto uq = unique(in);
+        
+        auto uq = unique_t<Sorted>{}(in);
         std::vector<BoxType> cat(uq.begin(), uq.end());
         std::unordered_map<BoxType, std::size_t> mp;
         for(auto i = 0ul; i < cat.size(); ++i) mp[ cat[i] ] = i;
@@ -55,7 +56,10 @@ struct factorize_t {
 } // namespace fn
 
 template<typename DataType = double>
-inline static constexpr auto factorize = fn::factorize_t<DataType>{};
+inline static constexpr auto factorize = fn::factorize_t<DataType, false>{};
+
+template<typename DataType = double>
+inline static constexpr auto sorted_factorize = fn::factorize_t<DataType, true>{};
 
 } // namespace amt
 
