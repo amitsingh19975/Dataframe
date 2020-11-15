@@ -41,28 +41,10 @@ template <std::size_t N> struct column_t {
         std::array<index_type, N> ids;
         for(auto i = 0u; i < N; ++i){
             if(has_index(i)) ids[i] = index(i);
-            else {
-                auto it = std::find_if(f.begin(), f.end(), [col = name(i)](auto const& s){ return s.name() == col; });
-                if(it == f.end()){
-                    throw std::runtime_error(ERR_CSTR("amt::fn::column_t::get_indices(Frame auto const&): column not found"));
-                }
-                ids[i] = static_cast<index_type>( std::distance(f.begin(), it) );
-            }
+            else ids[i] = f.name_index(name(i));
         }
 
         return ids;
-    }
-
-    template<typename Fn>
-    constexpr bool get(index_type k, Fn &&fn) const {
-        if (has_index(k)) {
-            if constexpr( std::is_invocable_v<Fn, index_type> )
-                return std::invoke(std::forward<Fn>(fn), index());
-        }else{
-            if constexpr( std::is_invocable_v<Fn, string_type> )
-                return std::invoke(std::forward<Fn>(fn), name());
-        }
-        return false;
     }
 
   private:

@@ -31,7 +31,7 @@ template <std::size_t N> struct filter_col_t : column_t<N> {
         auto ids = super_type::get_indices(in);
 
         for (auto i = 0ul; i < in.rows(); ++i) {
-            if constexpr( HasStoreResult<Fn> ){
+            if constexpr( !HasStoreResult<Fn> ){
                 auto const& s = ids[0];
                 auto const& el = s[i];
                 if (std::invoke(std::forward<Fn>(fn), el)) {

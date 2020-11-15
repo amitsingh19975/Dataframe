@@ -407,6 +407,17 @@ template <Box BoxType> struct basic_frame<BoxType> {
         return *it;
     }
 
+    constexpr size_type name_index(std::string_view k) const {
+        auto it = std::find_if(begin(), end(),
+                               [&](auto const &s) { return s.name() == k; });
+        if (it == end()) {
+            throw std::runtime_error(
+                ERR_CSTR("amt::basic_frame::operator[](std::string_view) : "
+                         "column name not found"));
+        }
+        return static_cast<size_type>(std::distance(begin(), it));
+    }
+
     constexpr auto operator()(arg::col k) { return get_col(k()); }
 
     constexpr auto operator()(arg::col k) const { return get_col(k()); }

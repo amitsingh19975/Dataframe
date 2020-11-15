@@ -223,7 +223,7 @@ struct logical_or : impl::compare_fn<LHS, std::logical_or<>> {
 };
 
 template <typename T> concept HasStoreResult = requires(T t) {
-    {t.store_result(0.)};
+    {t.store_result(0,0.)};
 };
 
 } // namespace amt
