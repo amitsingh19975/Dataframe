@@ -8,7 +8,7 @@
 namespace amt {
 
     template< typename... Ts >
-    struct type_list {
+    struct visitor_list {
         constexpr static auto size = sizeof...( Ts );
     };
 
@@ -33,8 +33,8 @@ namespace amt {
         using concat_t = typename concat< L, R >::type;
 
         template< typename... Ls, typename... Rs >
-        struct concat< type_list< Ls... >, type_list< Rs... > > {
-            using type = type_list< Ls..., Rs... >;
+        struct concat< visitor_list< Ls... >, visitor_list< Rs... > > {
+            using type = visitor_list< Ls..., Rs... >;
         };
 
     } // namespace traits
@@ -46,7 +46,7 @@ namespace amt {
 
     template< traits::UnboundedTypeStorage S, typename FnType, typename... Ts >
     requires( sizeof...( Ts ) > 0ul ) constexpr auto visit(
-        S&& storage, FnType&& fn, type_list< Ts... > ) noexcept -> void {
+        S&& storage, FnType&& fn, visitor_list< Ts... > ) noexcept -> void {
         ( impl::visitor_impl< Ts >( std::forward< S >( storage ), fn ), ... );
     }
 
@@ -55,7 +55,7 @@ namespace amt {
               0ul ) constexpr auto visit( S&& storage, FnType&& fn ) noexcept
         -> void {
         visit( std::forward< S >( storage ), std::forward< FnType >( fn ),
-               type_list< Ts... > {} );
+               visitor_list< Ts... > {} );
     }
 
 } // namespace amt

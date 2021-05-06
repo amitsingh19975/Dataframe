@@ -142,7 +142,7 @@ namespace amt {
     constexpr auto binary_op( LHS&& lhs, RHS&& rhs, FnType&& fn ) noexcept
         -> void {
         binary_op( std::forward< LHS >( lhs ), std::forward< RHS >( rhs ),
-                   std::forward< FnType >( fn ), type_list< Ts... > {} );
+                   std::forward< FnType >( fn ), visitor_list< Ts... > {} );
     }
 
 } // namespace amt

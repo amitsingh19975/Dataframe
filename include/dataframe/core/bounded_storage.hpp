@@ -24,7 +24,7 @@ namespace amt {
         template< typename T >
         using storage_type = typename storage_trait_type::template rebind< T >;
 
-        using type_list = type_list< storage_type< Ts >... >;
+        using type_list = visitor_list< storage_type< Ts >... >;
         using base_type = std::variant< storage_type< Ts >... >;
 
         constexpr static size_type number_of_types = sizeof...( Ts );
