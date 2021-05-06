@@ -43,18 +43,18 @@ namespace amt {
         constexpr ~basic_bounded_storage() noexcept   = default;
 
         template< typename T >
-        requires traits::IsTypeInVariant< storage_type< T >, base_type >
+        requires traits::InVisitorList< T, type_list >
         constexpr basic_bounded_storage( storage_type< T > const& vec )
             : m_data( vec ) {}
 
         template< typename T >
-        requires traits::IsTypeInVariant< storage_type< T >, base_type >
+        requires traits::InVisitorList< T, type_list >
         constexpr basic_bounded_storage( storage_type< T >&& vec )
             : m_data( std::move( vec ) ) {}
 
         template< typename T >
         requires(
-            traits::IsTypeInVariant< storage_type< T >, base_type > &&
+            traits::InVisitorList< T, type_list > &&
             !is_static_storage ) constexpr basic_bounded_storage( std::
                                                                       initializer_list<
                                                                           T >
@@ -63,7 +63,7 @@ namespace amt {
 
         template< typename T >
         requires(
-            traits::IsTypeInVariant< storage_type< T >, base_type >&&
+            traits::InVisitorList< T, type_list >&&
                 is_static_storage ) constexpr basic_bounded_storage( std::
                                                                          initializer_list<
                                                                              T >
@@ -80,7 +80,7 @@ namespace amt {
 
         template< typename T >
         requires(
-            traits::IsTypeInVariant< storage_type< T >, base_type > &&
+            traits::InVisitorList< T, type_list > &&
             !is_static_storage ) constexpr basic_bounded_storage( size_type
                                                                       size,
                                                                   T def )
