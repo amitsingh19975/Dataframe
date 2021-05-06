@@ -30,12 +30,12 @@ namespace amt {
         constexpr ~basic_series() noexcept                           = default;
 
         template< typename... Ts >
-        requires std::is_constructible_v< base_type, Ts... >
+        requires std::is_constructible_v< base_type, Ts&&... >
         constexpr basic_series( Ts&&... args ) noexcept
             : m_data( std::forward< Ts >( args )... ) {}
 
         template< typename... Ts >
-        requires std::is_constructible_v< base_type, Ts... >
+        requires std::is_constructible_v< base_type, Ts&&... >
         constexpr basic_series( std::string_view name, Ts&&... args ) noexcept
             : m_data( std::forward< Ts >( args )... ), m_name( name ) {}
 
