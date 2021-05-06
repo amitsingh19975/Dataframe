@@ -56,6 +56,9 @@ namespace amt {
         template<typename T, typename List>
         concept InVisitorList = impl::in_visitor_list_helper<T>(List{});
 
+        template<typename List>
+        concept VisitorList = impl::is_visitor_list_v<List>;
+
     } // namespace traits
 
 } // namespace amt
