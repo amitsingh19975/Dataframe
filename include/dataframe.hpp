@@ -7,6 +7,7 @@
 #include <dataframe/core/traits/traits.hpp>
 #include <dataframe/core/unbounded_storage.hpp>
 #include <dataframe/functions/for_each.hpp>
+#include <dataframe/functions/push_back.hpp>
 #include <dataframe/series.hpp>
 
 #endif // AMT_DATAFRAME_DATAFRAME_HPP
