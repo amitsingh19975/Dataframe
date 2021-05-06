@@ -24,25 +24,35 @@ namespace amt {
         std::visit( std::forward< FnType >( fn ), storage.base() );
     }
 
-    template< traits::BoundedTypeStorage S, typename FnType,  typename... Ts >
-        requires (sizeof... (Ts) > 0ul)
-    constexpr auto visit( S&& storage, FnType&& fn, visitor_list< Ts... > ) noexcept -> void {
+    template< traits::BoundedTypeStorage S, typename FnType, typename... Ts >
+    requires( sizeof...( Ts ) > 0ul ) constexpr auto visit(
+        S&& storage, FnType&& fn, visitor_list< Ts... > ) noexcept -> void {
         using visitor_list_t = visitor_list< Ts... >;
-        using variant_type = typename std::decay_t<S>::base_type;
-        
-        static_assert( (traits::IsTypeInVariant<Ts,variant_type> && ...), "type is not in the set of bounded type storage" );
 
-        std::visit([fn = std::forward<FnType>(fn)]<typename T>(T&& val){
-            if constexpr(traits::InVisitorList<std::decay_t<T>, visitor_list_t>){
-                std::invoke(fn, std::forward<T>(val));
-            }
-        }, storage.base());
+        static_assert(
+            ( traits::InVisitorList< Ts,
+                                     typename std::decay_t< S >::type_list > &&
+              ... ),
+            "type is not in the set of bounded type storage" );
+
+        std::visit(
+            [ fn = std::forward< FnType >( fn ) ]< typename T >( T&& val ) {
+                using storage_traits_t = storage_traits< std::decay_t< T > >;
+                if constexpr ( traits::InVisitorList<
+                                   typename storage_traits_t::value_type,
+                                   visitor_list_t > ) {
+                    std::invoke( fn, std::forward< T >( val ) );
+                }
+            },
+            storage.base() );
     }
 
     template< typename... Ts, traits::BoundedTypeStorage S, typename FnType >
-        requires (sizeof... (Ts) > 0ul)
-    constexpr auto visit( S&& storage, FnType&& fn ) noexcept -> void {
-        visit(std::forward<S>(storage), std::forward<FnType>(fn), visitor_list<Ts...>{});
+    requires( sizeof...( Ts ) >
+              0ul ) constexpr auto visit( S&& storage, FnType&& fn ) noexcept
+        -> void {
+        visit( std::forward< S >( storage ), std::forward< FnType >( fn ),
+               visitor_list< Ts... > {} );
     }
 
     template< traits::UnboundedTypeStorage S, typename FnType, typename... Ts >
