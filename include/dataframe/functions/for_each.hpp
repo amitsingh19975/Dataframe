@@ -28,7 +28,9 @@ namespace amt::fn {
             visit(
                 s.base(), [ fn = std::forward< FnType >( m_fn ) ]( auto&& c ) {
                     for ( auto&& el : c ) {
-                        std::invoke( fn, std::forward< decltype( el ) >( el ) );
+                        using el_type = decltype( el );
+                        if constexpr ( std::is_invocable_v< FnType, el_type > )
+                            std::invoke( fn, std::forward< el_type >( el ) );
                     }
                 } );
         }
@@ -40,7 +42,9 @@ namespace amt::fn {
                 s.base(),
                 [ fn = std::forward< FnType >( m_fn ) ]( auto&& c ) {
                     for ( auto&& el : c ) {
-                        std::invoke( fn, std::forward< decltype( el ) >( el ) );
+                        using el_type = decltype( el );
+                        if constexpr ( std::is_invocable_v< FnType, el_type > )
+                            std::invoke( fn, std::forward< el_type >( el ) );
                     }
                 },
                 li );
