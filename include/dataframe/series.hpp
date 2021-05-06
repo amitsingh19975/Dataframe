@@ -29,24 +29,19 @@ namespace amt {
         constexpr basic_series& operator=( basic_series&& ) noexcept = default;
         constexpr ~basic_series() noexcept                           = default;
 
-        template< typename T >
-        requires std::is_constructible_v< base_type, T >
-        constexpr basic_series( T&& data ) noexcept
-            : m_data( std::forward< T >( data ) ) {}
+        template< typename... Ts >
+        requires std::is_constructible_v< base_type, Ts... >
+        constexpr basic_series( Ts&&... args ) noexcept
+            : m_data( std::forward< Ts >( args )... ) {}
 
-        template< typename T >
-        requires std::is_constructible_v< base_type, T >
-        constexpr basic_series( std::string_view name, T&& data ) noexcept
-            : m_data( data ), m_name( name ) {}
+        template< typename... Ts >
+        requires std::is_constructible_v< base_type, Ts... >
+        constexpr basic_series( std::string_view name, Ts&&... args ) noexcept
+            : m_data( std::forward< Ts >( args )... ), m_name( name ) {}
 
         template< typename T >
         constexpr basic_series( std::initializer_list< T > li ) noexcept
             : m_data( std::move( li ) ) {}
-
-        template< typename T >
-        requires( !is_static_storage ) constexpr basic_series( size_type size,
-                                                               T def ) noexcept
-            : m_data( size, std::move( def ) ) {}
 
         constexpr auto& base() noexcept { return m_data; }
         constexpr auto const& base() const noexcept { return m_data; }
