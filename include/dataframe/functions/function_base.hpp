@@ -1,7 +1,7 @@
 #if !defined( AMT_DATAFRAME_FUNCTIONS_FUNCTION_BASE_HPP )
 #define AMT_DATAFRAME_FUNCTIONS_FUNCTION_BASE_HPP
 
-#include <dataframe/core/traits/operator.hpp>
+#include <dataframe/core/traits/traits.hpp>
 
 namespace amt::fn::impl {
 
