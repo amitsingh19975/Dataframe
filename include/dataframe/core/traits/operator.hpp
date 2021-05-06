@@ -17,7 +17,7 @@ namespace amt { namespace traits {
 
     template< typename T >
     concept Multipliable = requires( T t ) {
-        { t* t } -> std::same_as< T >;
+        { t * t } -> std::same_as< T >;
     };
 
     template< typename T >
@@ -33,6 +33,12 @@ namespace amt { namespace traits {
         { u == t } -> std::same_as< bool >;
         { t != u } -> std::same_as< bool >;
         { u != t } -> std::same_as< bool >;
+    };
+
+    template< typename T, typename... Args >
+    concept CallableObject = requires( std::remove_reference_t< T > const& t,
+                                       Args&&... args ) {
+        { t( std::forward< Args >( args )... ) };
     };
 
 }} // namespace amt::traits
