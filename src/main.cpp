@@ -5,9 +5,8 @@
 
 int main(){
     amt::basic_series< amt::dynamic_unbounded_storage > s(10ul,100.f);
-    for(auto el : amt::iter<float>(s)){
-        std::cout<<el<<'\n';
-    }
+    amt::basic_series< amt::dynamic_unbounded_storage > t;
+    std::cout<<(s==t)<<'\n';
     return 0;
 }
 

@@ -85,13 +85,13 @@ namespace amt{
             std::swap(lhs.m_data, rhs.m_data);
         }
 
-        constexpr size_type size() const noexcept{
+        constexpr auto size() const noexcept -> size_type{
             return visit(*this, [](auto&& cont){
                 return cont.size();
             });
         }
 
-        constexpr bool operator==(basic_bounded_storage const& other) const noexcept{
+        constexpr auto operator==(basic_bounded_storage const& other) const noexcept -> bool{
             if(!holds_same_type(*this,other)) return false;
             auto res = false;
             return binary_op(*this, other, [&res]<typename T, typename U>(T&& l, U&& r){
@@ -104,7 +104,7 @@ namespace amt{
             return res;
         }
 
-        constexpr bool operator!=(basic_bounded_storage const& other) const noexcept{
+        constexpr auto operator!=(basic_bounded_storage const& other) const noexcept -> bool{
             return !(*this == other);
         }
 

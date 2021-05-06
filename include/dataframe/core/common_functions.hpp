@@ -50,7 +50,7 @@ namespace amt{
     }
 
     template<typename T>
-    constexpr bool equal(auto&& LHS, auto&& RHS) noexcept{
+    constexpr auto equal(auto&& LHS, auto&& RHS) noexcept -> bool{
         auto const& lhs = ::amt::get<T>(LHS);
         auto const& rhs = ::amt::get<T>(RHS);
         if(lhs.size() != rhs.size()) return false;
@@ -60,11 +60,11 @@ namespace amt{
     }
 
     template<typename T, traits::BoundedTypeStorage S>
-    constexpr bool is(S&& s) noexcept{
+    constexpr auto is(S&& s) noexcept -> bool{
         return std::holds_alternative<T>(s.base());
     }
 
-    constexpr bool holds_same_type(auto&& l, auto&& r) noexcept{
+    constexpr auto holds_same_type(auto&& l, auto&& r) noexcept -> bool{
         return l.base().index() == r.base().index();
     }
 
