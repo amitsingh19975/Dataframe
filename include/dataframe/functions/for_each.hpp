@@ -25,14 +25,14 @@ namespace amt::fn {
         requires traits::BoundedTypeStorage<
             typename std::decay_t< S >::base_type >
         constexpr decltype( auto ) operator()( S&& s ) const noexcept {
-            visit(
-                s.base(), [ fn = std::forward< FnType >( m_fn ) ]( auto&& c ) {
-                    for ( auto&& el : c ) {
-                        using el_type = decltype( el );
-                        if constexpr ( std::is_invocable_v< FnType, el_type > )
-                            std::invoke( fn, std::forward< el_type >( el ) );
-                    }
-                } );
+            visit( s.base(),
+                   [ fn = std::forward< FnType >( m_fn ) ]( auto&& c ) {
+                       for ( auto&& el : c ) {
+                           using el_type = decltype( el );
+                           base_type::invoke_if_invocable(
+                               fn, std::forward< el_type >( el ) );
+                       }
+                   } );
         }
 
         template< traits::Series S, typename... Ts >
@@ -43,8 +43,8 @@ namespace amt::fn {
                 [ fn = std::forward< FnType >( m_fn ) ]( auto&& c ) {
                     for ( auto&& el : c ) {
                         using el_type = decltype( el );
-                        if constexpr ( std::is_invocable_v< FnType, el_type > )
-                            std::invoke( fn, std::forward< el_type >( el ) );
+                        base_type::invoke_if_invocable(
+                            fn, std::forward< el_type >( el ) );
                     }
                 },
                 li );
