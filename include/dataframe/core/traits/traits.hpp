@@ -1,24 +1,18 @@
-#if !defined(AMT_DATAFRAME_CORE_TRIATS_TRAITS_HPP)
+#if !defined( AMT_DATAFRAME_CORE_TRIATS_TRAITS_HPP )
 #define AMT_DATAFRAME_CORE_TRIATS_TRAITS_HPP
 
-#include <dataframe/core/traits/variant.hpp>
 #include <dataframe/core/traits/operator.hpp>
+#include <dataframe/core/traits/variant.hpp>
 #include <dataframe/core/traits/view.hpp>
 
-namespace amt{
+namespace amt { namespace traits {
 
-    namespace traits{
-        
-        template<typename T>
-        concept Storage = BoundedTypeStorage<T> || UnboundedTypeStorage<T>;
+    template< typename T >
+    concept Storage = BoundedTypeStorage< T > || UnboundedTypeStorage< T >;
 
-        template<typename T>
-        concept DataFrame = Series<T> || Frame<T>;
+    template< typename T >
+    concept DataFrame = Series< T > || Frame< T >;
 
-    } // namespace traits
-
-} // namespace amt
-
-
+}} // namespace amt::traits
 
 #endif // AMT_DATAFRAME_CORE_TRIATS_TRAITS_HPP
