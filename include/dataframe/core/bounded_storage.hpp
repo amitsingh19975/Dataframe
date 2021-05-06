@@ -3,6 +3,7 @@
 
 #include <dataframe/core/iterator_wrapper.hpp>
 #include <dataframe/core/traits/bounded.hpp>
+#include <dataframe/core/traits/operator.hpp>
 #include <dataframe/core/traits/variant.hpp>
 #include <dataframe/core/visitor.hpp>
 #include <initializer_list>
