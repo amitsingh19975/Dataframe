@@ -67,7 +67,8 @@ namespace amt {
 
     template< typename T, traits::BoundedTypeStorage S >
     constexpr auto is( S&& s ) noexcept -> bool {
-        return std::holds_alternative< T >( s.base() );
+        using stored_type = typename std::decay_t<S>::template storage_type<T>;
+        return std::holds_alternative< stored_type >( s.base() );
     }
 
     template< typename T, traits::UnboundedTypeStorage S >
