@@ -60,6 +60,16 @@ namespace amt {
         return fn::for_each( std::forward< FnType >( fn ), li );
     }
 
+    template< typename... Ts, typename FnType >
+    constexpr auto for_each( auto&& s, FnType&& fn ) noexcept {
+        for_each<Ts...>(std::forward<FnType>(fn))(s);
+    }
+
+    template< typename FnType, typename... Ts >
+    constexpr auto for_each( auto&& s, FnType&& fn, visitor_list< Ts... > li ) noexcept {
+        for_each( std::forward< FnType >( fn ), li )(s);
+    }
+
 } // namespace amt
 
 #endif // AMT_DATAFRAME_FUNCTIONS_FOR_EACH_HPP
