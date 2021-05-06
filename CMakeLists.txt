@@ -6,6 +6,7 @@ project(dataframe CXX)
 
 include(cmake/StandardProjectSettings.cmake)
 include(cmake/OpenMP.cmake)
+include(cmake/Curses.cmake)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

@@ -1,10 +1,11 @@
 #if !defined(AMT_DATAFRAME_DATAFRAME_HPP)
 #define AMT_DATAFRAME_DATAFRAME_HPP
 
-#include <dataframe/type_traits.hpp>
-#include <dataframe/frame.hpp>
-#include <dataframe/functions.hpp>
-#include <dataframe/parser/tsv.hpp>
-#include <dataframe/parser/csv.hpp>
+#include <dataframe/core/traits/traits.hpp>
+#include <dataframe/core/storage.hpp>
+#include <dataframe/core/common_functions.hpp>
+#include <dataframe/core/bounded_storage.hpp>
+#include <dataframe/core/unbounded_storage.hpp>
+#include <dataframe/series.hpp>
 
 #endif // AMT_DATAFRAME_DATAFRAME_HPP
