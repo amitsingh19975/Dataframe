@@ -10,6 +10,7 @@
 #include <functional>
 #include <string>
 #include <optional>
+#include <typeindex>
 
 namespace amt{
 
@@ -30,16 +31,17 @@ namespace amt{
 
             constexpr function_table() noexcept = default;
 
-            constexpr function_table(
+            function_table(
                     size_fn_t sz, copy_fn_t cp, 
                     move_fn_t mv, destroy_fn_t des,
-                    equal_fn_t bin
+                    equal_fn_t bin, std::type_index index
             ) noexcept
                 : m_size_fn(std::move(sz))
                 , m_copy_fn(std::move(cp))
                 , m_move_fn(std::move(mv))
                 , m_destroy_fn(std::move(des))
                 , m_equal_fn(std::move(bin))
+                , m_type_index(index)
             {}
 
             template<typename U>
@@ -65,7 +67,8 @@ namespace amt{
                         if(!lopt || !ropt) return false;
                         if((*lopt).size() != (*ropt).size()) return false;
                         return std::equal((*lopt).begin(), (*lopt).end(), (*ropt).begin());
-                    }
+                    },
+                    {typeid(U)}
                 );
             }
 
@@ -89,12 +92,18 @@ namespace amt{
                 std::invoke(m_destroy_fn, self);
             }
 
+            template<typename T>
+            auto is() const noexcept -> bool{
+                return std::type_index(typeid(T)) == m_type_index;
+            }
+
         private:
             size_fn_t m_size_fn{nullptr};
             copy_fn_t m_copy_fn{nullptr};
             move_fn_t m_move_fn{nullptr};
             destroy_fn_t m_destroy_fn{nullptr};
             equal_fn_t m_equal_fn{nullptr};
+            std::type_index m_type_index;
         };
 
         template<typename T>
@@ -277,12 +286,14 @@ namespace amt{
         }
 
     private:
+        template<typename T, traits::UnboundedTypeStorage U>
+        friend constexpr auto is(U&& s) noexcept -> bool;
 
         template<typename T>
         static base_type<T> m_data;
 
         function_container<function_table> m_fn_table{};
-
+        
         std::size_t m_curr_pos{};
     };
 
