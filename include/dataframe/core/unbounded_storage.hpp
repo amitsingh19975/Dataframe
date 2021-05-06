@@ -136,6 +136,10 @@ namespace amt {
             TypesUpperBound< 0, std::vector< T >,
                              std::array< T, static_cast< std::size_t >(
                                                 TypesUpperBound ) > >;
+        template< typename T >
+        using real_type =
+            std::conditional_t< std::is_constructible_v< std::string, T >,
+                                std::string, T >;
 
     public:
         constexpr static bool has_upper_limit = TypesUpperBound >= 0;
@@ -143,8 +147,10 @@ namespace amt {
             traits::StaticStorageTrait< storage_trait_type >;
         using size_type       = typename storage_trait_type::size_type;
         using difference_type = typename storage_trait_type::difference_type;
+
         template< typename T >
-        using storage_type = typename storage_trait_type::template rebind< T >;
+        using storage_type =
+            typename storage_trait_type::template rebind< real_type< T > >;
 
         template< typename T >
         using optinal_storage_type = std::optional< storage_type< T > >;
@@ -301,10 +307,10 @@ namespace amt {
 
         template< typename T >
         constexpr auto get_container() -> optinal_storage_type< T >& {
-            auto& item = m_data< T >;
+            auto& item = m_data< real_type< T > >;
 
             if ( auto it = item.find( this ); it == item.end() ) {
-                push_fn< T >();
+                push_fn< real_type< T > >();
                 return item[ this ] = std::nullopt;
             } else {
                 return it->second;
@@ -314,7 +320,7 @@ namespace amt {
         template< typename T >
         constexpr auto get_container() const
             -> optinal_storage_type< T > const& {
-            auto const& item = m_data< T >;
+            auto const& item = m_data< real_type< T > >;
             if ( auto it = item.find( this ); it == item.end() ) {
                 throw std::runtime_error(
                     "amt::basic_unbounded_storage::get_container<T>() : "
