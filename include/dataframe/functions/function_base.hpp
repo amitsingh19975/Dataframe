@@ -18,9 +18,17 @@ namespace amt::fn::impl {
         }
 
         template< typename... Args >
-        requires traits::CallableObject< Child, Args... >
+        requires traits::CallableObject< Child, Args&&... >
         constexpr decltype( auto ) operator()( Args&&... args ) const noexcept {
-            return self()( std::forward< Args >( args )... );
+            return std::invoke( self(), std::forward< Args >( args )... );
+        }
+
+        template< typename FnType, typename... Args >
+        constexpr static decltype( auto )
+        invoke_if_invocable( FnType&& fn, Args&&... args ) noexcept {
+            if constexpr ( traits::CallableObject< FnType, Args&&... > )
+                return std::invoke( std::forward< FnType >( fn ),
+                                    std::forward< Args >( args )... );
         }
 
         constexpr fn_base() noexcept                 = default;
