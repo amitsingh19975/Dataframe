@@ -6,54 +6,60 @@
 
 namespace amt::fn {
 
-    template< typename FnType >
-    struct for_each : impl::fn_base< for_each< FnType > > {
-        using base_type = impl::fn_base< for_each< FnType > >;
+    template< typename FnType, typename TypeList >
+    struct for_each : impl::fn_base< for_each< FnType, TypeList > > {
+        using base_type = impl::fn_base< for_each< FnType, TypeList > >;
 
         constexpr for_each( FnType&& fn ) noexcept
             : m_fn( std::forward< FnType >( fn ) ) {}
 
-        template< traits::Series S >
-        requires traits::VisitorBase< FnType >
-        constexpr decltype( auto ) operator()( S&& s ) const noexcept {
-            using visitor_list_t =
-                typename std::decay_t< FnType >::visitor_list_t;
-            this->operator()( std::forward< S >( s ), visitor_list_t {} );
-        }
+        constexpr for_each( FnType&& fn, TypeList ) noexcept
+            : m_fn( std::forward< FnType >( fn ) ) {}
 
-        template< traits::Series S >
-        requires traits::BoundedTypeStorage<
-            typename std::decay_t< S >::base_type >
-        constexpr decltype( auto ) operator()( S&& s ) const noexcept {
-            visit( s.base(),
-                   [ fn = std::forward< FnType >( m_fn ) ]( auto&& c ) {
-                       for ( auto&& el : c ) {
-                           using el_type = decltype( el );
-                           base_type::invoke_if_invocable(
-                               fn, std::forward< el_type >( el ) );
-                       }
-                   } );
-        }
-
-        template< traits::Series S, typename... Ts >
-        constexpr decltype( auto )
-        operator()( S&& s, visitor_list< Ts... > li ) const noexcept {
+        template< typename S >
+        requires( traits::BoundedTypeStorage< S > ||
+                  (traits::UnboundedTypeStorage< S > &&
+                   !std::is_same_v< TypeList, tag::dummy >)) constexpr auto
+        operator()( S&& s ) const noexcept -> void {
             visit(
-                s.base(),
-                [ fn = std::forward< FnType >( m_fn ) ]( auto&& c ) {
+                std::forward< S >( s ),
+                [ this ]< typename T >( T&& c ) {
                     for ( auto&& el : c ) {
                         using el_type = decltype( el );
                         base_type::invoke_if_invocable(
-                            fn, std::forward< el_type >( el ) );
+                            m_fn, std::forward< el_type >( el ) );
                     }
                 },
-                li );
+                TypeList {} );
+        }
+
+        template< traits::Series S >
+        constexpr auto operator()( S&& s ) const noexcept -> void {
+            this->operator()( s.base() );
         }
 
     private:
-        FnType&& m_fn;
+        FnType const& m_fn;
     };
 
 } // namespace amt::fn
+
+namespace amt {
+
+    template< typename... Ts, typename FnType >
+    constexpr auto for_each( FnType&& fn ) noexcept {
+        if constexpr ( sizeof...( Ts ) > 0ul )
+            return fn::for_each( std::forward< FnType >( fn ),
+                                 visitor_list< Ts... > {} );
+        else
+            return fn::for_each( std::forward< FnType >( fn ), tag::dummy {} );
+    }
+
+    template< typename FnType, typename... Ts >
+    constexpr auto for_each( FnType&& fn, visitor_list< Ts... > li ) noexcept {
+        return fn::for_each( std::forward< FnType >( fn ), li );
+    }
+
+} // namespace amt
 
 #endif // AMT_DATAFRAME_FUNCTIONS_FOR_EACH_HPP
