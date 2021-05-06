@@ -46,17 +46,18 @@ namespace amt{
         std::visit(std::forward<FnType>(fn), storage.base());
     }
 
-    template< typename... Ts, traits::UnboundedTypeStorage S ,typename FnType>
-        requires ( sizeof...(Ts) > 0ul )
-    constexpr auto visit(S&& storage, FnType&& fn) noexcept -> void{
-        (impl::visitor_impl<Ts>(std::forward<S>(storage), fn), ...);
-    }
-
     template< traits::UnboundedTypeStorage S ,typename FnType, typename... Ts>
         requires ( sizeof...(Ts) > 0ul )
     constexpr auto visit(S&& storage, FnType&& fn, type_list<Ts...>) noexcept -> void{
         (impl::visitor_impl<Ts>(std::forward<S>(storage), fn), ...);
     }
+
+    template< typename... Ts, traits::UnboundedTypeStorage S ,typename FnType>
+        requires ( sizeof...(Ts) > 0ul )
+    constexpr auto visit(S&& storage, FnType&& fn) noexcept -> void{
+        visit(std::forward<S>(storage), std::forward<FnType>(fn), type_list<Ts...>{});
+    }
+
 
     
 

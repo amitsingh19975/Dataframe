@@ -64,7 +64,32 @@ namespace amt{
         return std::holds_alternative<T>(s.base());
     }
 
-    constexpr auto holds_same_type(auto&& l, auto&& r) noexcept -> bool{
+    template<typename T, traits::UnboundedTypeStorage S>
+    constexpr auto is(S&& s) noexcept -> bool{
+        for(auto const& fns : s.m_fn_table){
+            if(!fns.template is<T>()) return false;
+        }
+        return true;
+    }
+
+    template<typename T, traits::Series S>
+    constexpr auto is(S&& s) noexcept -> bool{
+        return is<T>(s.base());
+    }
+
+    template<typename... Ts, typename S>
+        requires (sizeof... (Ts) > 0ul)
+    constexpr auto is_all(S&& s) noexcept -> bool{
+        return ( is<Ts>(s) && ...  );
+    }
+
+    template<typename... Ts, typename S>
+        requires (sizeof... (Ts) > 0ul)
+    constexpr auto is_any(S&& s) noexcept -> bool{
+        return ( is<Ts>(s) || ...  );
+    }
+
+    constexpr auto holds_same_type(traits::BoundedTypeStorage auto&& l, traits::BoundedTypeStorage auto&& r) noexcept -> bool{
         return l.base().index() == r.base().index();
     }
 
@@ -77,6 +102,22 @@ namespace amt{
                 }
             });
         });
+    }
+
+    template<typename List, typename FnType>
+    constexpr auto binary_op(traits::UnboundedTypeStorage auto&& LHS, traits::UnboundedTypeStorage auto&& RHS, FnType&& fn, List) noexcept -> void{
+        visit(LHS, [&RHS, fn = std::forward<FnType>(fn)](auto&& l){
+            visit(RHS, [&fn, &l](auto&& r){
+                if constexpr(std::is_invocable_v<FnType,decltype(l), decltype(r)>){
+                    std::invoke(fn, l, r);
+                }
+            }, List{});
+        }, List{});
+    }
+
+    template<typename... Ts, traits::UnboundedTypeStorage LHS , traits::UnboundedTypeStorage RHS, typename FnType>
+    constexpr auto binary_op( LHS&& lhs, RHS&& rhs, FnType&& fn) noexcept -> void{
+        binary_op(std::forward<LHS>(lhs), std::forward<RHS>(rhs), std::forward<FnType>(fn), type_list<Ts...>{});
     }
 
 } // namespace amt
