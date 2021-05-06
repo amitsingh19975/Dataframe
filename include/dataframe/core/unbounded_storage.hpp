@@ -154,26 +154,32 @@ namespace amt {
                                               optinal_storage_type< T > >;
 
         constexpr basic_unbounded_storage() noexcept = default;
-        constexpr basic_unbounded_storage( basic_unbounded_storage const& ) =
-            default;
         constexpr basic_unbounded_storage(
-            basic_unbounded_storage&& ) noexcept = default;
+            basic_unbounded_storage const& other ) {
+            *this = other;
+        }
+        constexpr basic_unbounded_storage(
+            basic_unbounded_storage&& other ) noexcept {
+            *this = std::move( other );
+        }
 
         constexpr basic_unbounded_storage&
         operator=( basic_unbounded_storage const& other ) {
             if ( this == &other )
-                return;
+                return *this;
             m_fn_table = other.m_fn_table;
             clear();
             copy_helper( other );
+            return *this;
         }
         constexpr basic_unbounded_storage&
         operator=( basic_unbounded_storage&& other ) noexcept {
             if ( this == &other )
-                return;
+                return *this;
             m_fn_table = std::move( other.m_fn_table );
             clear();
             move_helper( other );
+            return *this;
         }
 
         template< typename U >
