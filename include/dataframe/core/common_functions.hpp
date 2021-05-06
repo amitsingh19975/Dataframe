@@ -26,7 +26,7 @@ namespace amt{
 
     template<typename T, traits::UnboundedTypeStorage S>
     constexpr decltype(auto) get(S&& storage){
-        return storage.template data<T>();
+        return storage.template get_or_make<T>().value();
     }
 
     template<typename T, traits::Series S>

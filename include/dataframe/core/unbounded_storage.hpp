@@ -77,7 +77,7 @@ namespace amt{
                 std::invoke(m_move_fn, self, other);
             }
 
-            constexpr auto equal(basic_unbounded_storage& self, basic_unbounded_storage const& other) const noexcept -> bool{
+            constexpr auto equal(basic_unbounded_storage const& self, basic_unbounded_storage const& other) const noexcept -> bool{
                 return std::invoke(m_equal_fn, self, other);
             }
 
