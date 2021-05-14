@@ -18,9 +18,17 @@ namespace amt {
     constexpr decltype( auto ) get( S&& storage ) {
         using decayed_storage_t = std::decay_t< S >;
         using variant_type      = typename decayed_storage_t::base_type;
-        using type = typename decayed_storage_t::template storage_type< T >;
+
+        using type = typename decayed_storage_t::template storage_type< 
+            std::conditional_t<
+                std::is_constructible_v<std::string,T>,
+                std::string,
+                T
+            >
+        >;
+        
         static_assert( traits::IsTypeInVariant< type, variant_type >,
-                       "amt::get(S&&) : type is not inside the variant set" );
+                    "amt::get(S&&) : type is not inside the variant set" );
         return std::get< type >( storage.base() );
     }
 

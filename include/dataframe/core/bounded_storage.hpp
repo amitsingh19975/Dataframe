@@ -24,6 +24,11 @@ namespace amt {
         template< typename T >
         using storage_type = typename storage_trait_type::template rebind< T >;
 
+        template< typename T >
+        using real_type =
+            std::conditional_t< std::is_constructible_v< std::string, T >,
+                                std::string, T >;
+
         using type_list = visitor_list< Ts... >;
         using base_type = std::variant< storage_type< Ts >... >;
 
@@ -43,27 +48,28 @@ namespace amt {
         constexpr ~basic_bounded_storage() noexcept   = default;
 
         template< typename T >
-        requires traits::InVisitorList< T, type_list >
-        constexpr basic_bounded_storage( storage_type< T > const& vec )
+        requires traits::InVisitorList< real_type< T >, type_list >
+        constexpr basic_bounded_storage(
+            storage_type< real_type< T > > const& vec )
             : m_data( vec ) {}
 
         template< typename T >
-        requires traits::InVisitorList< T, type_list >
-        constexpr basic_bounded_storage( storage_type< T >&& vec )
+        requires traits::InVisitorList< real_type< T >, type_list >
+        constexpr basic_bounded_storage( storage_type< real_type< T > >&& vec )
             : m_data( std::move( vec ) ) {}
 
         template< typename T >
         requires(
-            traits::InVisitorList< T, type_list > &&
+            traits::InVisitorList< real_type< T >, type_list > &&
             !is_static_storage ) constexpr basic_bounded_storage( std::
                                                                       initializer_list<
                                                                           T >
                                                                           li )
-            : m_data( storage_type< T >( std::move( li ) ) ) {}
+            : m_data( storage_type< real_type< T > >( std::move( li ) ) ) {}
 
         template< typename T >
         requires(
-            traits::InVisitorList< T, type_list >&&
+            traits::InVisitorList< real_type< T >, type_list >&&
                 is_static_storage ) constexpr basic_bounded_storage( std::
                                                                          initializer_list<
                                                                              T >
@@ -74,17 +80,19 @@ namespace amt {
                     "the size of the initializer list is greator than "
                     "the static storage" );
             }
-            auto& temp = m_data.template emplace< storage_type< T > >();
+            auto& temp =
+                m_data.template emplace< storage_type< real_type< T > > >();
             std::copy( li.begin(), li.end(), temp.begin() );
         }
 
         template< typename T >
         requires(
-            traits::InVisitorList< T, type_list > &&
+            traits::InVisitorList< real_type< T >, type_list > &&
             !is_static_storage ) constexpr basic_bounded_storage( size_type
                                                                       size,
                                                                   T def )
-            : m_data( storage_type< T >( size, std::move( def ) ) ) {}
+            : m_data(
+                  storage_type< real_type< T > >( size, std::move( def ) ) ) {}
 
         constexpr auto& base() noexcept { return m_data; }
         constexpr auto const& base() const noexcept { return m_data; }
