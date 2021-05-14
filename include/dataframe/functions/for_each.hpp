@@ -47,7 +47,7 @@ namespace amt::fn {
 namespace amt {
 
     template< typename... Ts, typename FnType >
-    constexpr auto for_each( FnType&& fn ) noexcept {
+    [[nodiscard]] constexpr auto for_each( FnType&& fn ) noexcept {
         if constexpr ( sizeof...( Ts ) > 0ul )
             return fn::for_each( std::forward< FnType >( fn ),
                                  visitor_list< Ts... > {} );
@@ -56,7 +56,7 @@ namespace amt {
     }
 
     template< typename FnType, typename... Ts >
-    constexpr auto for_each( FnType&& fn, visitor_list< Ts... > li ) noexcept {
+    [[nodiscard]] constexpr auto for_each( FnType&& fn, visitor_list< Ts... > li ) noexcept {
         return fn::for_each( std::forward< FnType >( fn ), li );
     }
 
