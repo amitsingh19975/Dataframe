@@ -8,6 +8,9 @@ namespace amt::tag {
 
     struct dummy {};
 
+    template<typename T>
+    struct dtype{};
+
 } // namespace amt::tag
 
 #endif // AMT_DATAFRAME_CORE_TAGS_HPP

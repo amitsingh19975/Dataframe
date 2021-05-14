@@ -220,6 +220,17 @@ namespace amt {
             get_container< U >() = storage_type< U >( sz, std::move( def ) );
         }
 
+        template< typename U >
+        requires( !is_static_storage ) constexpr basic_unbounded_storage(
+            size_type sz, tag::dtype< U > ) {
+            get_container< U >() = storage_type< U >( sz );
+        }
+
+        template< typename U >
+        constexpr basic_unbounded_storage( tag::dtype< U > ) {
+            get_container< U >() = storage_type< U >();
+        }
+
         constexpr ~basic_unbounded_storage() noexcept { clear(); }
 
         template< typename T >

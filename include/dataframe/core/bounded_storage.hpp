@@ -94,6 +94,21 @@ namespace amt {
             : m_data(
                   storage_type< real_type< T > >( size, std::move( def ) ) ) {}
 
+        template< typename T >
+        requires(
+            traits::InVisitorList<
+                real_type< T >,
+                type_list > ) constexpr basic_bounded_storage( tag::dtype< T > )
+            : m_data( storage_type< real_type< T > >() ) {}
+
+        template< typename T >
+        requires(
+            traits::InVisitorList< real_type< T >, type_list > &&
+            !is_static_storage ) constexpr basic_bounded_storage( size_type sz,
+                                                                  tag::dtype<
+                                                                      T > )
+            : m_data( storage_type< real_type< T > >( sz ) ) {}
+
         constexpr auto& base() noexcept { return m_data; }
         constexpr auto const& base() const noexcept { return m_data; }
 
