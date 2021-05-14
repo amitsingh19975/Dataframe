@@ -11,18 +11,18 @@ namespace amt::fn {
 
         template<typename T, traits::BoundedTypeStorage S>
         requires (!std::decay_t<S>::is_static_storage)
-        constexpr auto operator()(S&& s, T&& val) const noexcept{
+        constexpr auto operator()(S&& s, T&& val) const{
             ::amt::get<T>(s).push_back(std::forward<T>(val));
         }
         
         template<typename T, traits::UnboundedTypeStorage S>
         requires (!std::decay_t<S>::is_static_storage)
-        constexpr auto operator()(S&& s, T&& val) const noexcept{
+        constexpr auto operator()(S&& s, T&& val) const{
             s.template get_or_make<T>().value().push_back(std::forward<T>(val));
         }
         
         template<typename T, traits::Series S>
-        constexpr auto operator()(S&& s, T&& val) const noexcept{
+        constexpr auto operator()(S&& s, T&& val) const{
             this->operator()(s.base(), std::forward<T>(val));
         }
     };
