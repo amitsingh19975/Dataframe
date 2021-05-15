@@ -1,24 +1,28 @@
 #include <algorithm>
-#include <dataframe.hpp>
 #include <iostream>
 #include <numeric>
+#include <dataframe.hpp>
 
 int main() {
-    amt::basic_series< amt::dynamic_unbounded_storage > s( 10ul, 100.f );
-    amt::basic_series< amt::dynamic_unbounded_storage > t(
-        10ul, std::string_view( "StringTest" ) );
+    amt::basic_series< amt::dynamic_unbounded_storage > s(10ul,4.f);
+    
+    // for ( auto const& el : amt::iter< float >( s ) ) {
+    //     std::cout << el << ' ';
+    // }
+    // std::cout << "\n" << amt::is<float>(s)<<'\n';
 
-    for ( auto const& el : amt::iter< float >( s ) ) {
-        std::cout << el << ' ';
-    }
+    // amt::push_back(s,"Hello");
+    // amt::insert(s, 0, {"Word", "Ret", "try"});
+    
+    amt::transform<float,std::string>(s,[](float l){
+        return std::powf(l,3.f);
+    });
+
+    std::cout<<amt::reduce(s, 0.f, std::plus<float>{})<<std::endl;
+
+    auto f = amt::for_each<float,std::string>([](auto&& el){ std::cout<<el<<", "; });
+    f(s);
     std::cout << "\n";
-
-    for ( auto const& el : amt::iter< std::string_view >( t ) ) {
-        std::cout << el << ' ';
-    }
-    std::cout << "\n";
-
-    std::cout << amt::is_any< float, int >( s ) << '\n';
 
     return 0;
 }

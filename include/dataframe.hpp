@@ -10,6 +10,7 @@
 #include <dataframe/functions/push_back.hpp>
 #include <dataframe/functions/insert.hpp>
 #include <dataframe/functions/at.hpp>
+#include <dataframe/functions/reduce.hpp>
 #include <dataframe/functions/transform.hpp>
 #include <dataframe/series.hpp>
 
