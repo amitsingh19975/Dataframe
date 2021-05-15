@@ -46,6 +46,8 @@ namespace amt {
         constexpr auto& base() noexcept { return m_data; }
         constexpr auto const& base() const noexcept { return m_data; }
 
+        constexpr auto size() const noexcept -> size_type { return m_data.size(); }
+
         constexpr auto operator==( basic_series const& other ) const noexcept
             -> bool {
             return m_data == other.m_data;
