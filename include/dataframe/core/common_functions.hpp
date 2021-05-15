@@ -19,16 +19,12 @@ namespace amt {
         using decayed_storage_t = std::decay_t< S >;
         using variant_type      = typename decayed_storage_t::base_type;
 
-        using type = typename decayed_storage_t::template storage_type< 
-            std::conditional_t<
-                std::is_constructible_v<std::string,T>,
-                std::string,
-                T
-            >
-        >;
-        
+        using type = typename decayed_storage_t::template storage_type<
+            std::conditional_t< std::is_constructible_v< std::string, T >,
+                                std::string, T > >;
+
         static_assert( traits::IsTypeInVariant< type, variant_type >,
-                    "amt::get(S&&) : type is not inside the variant set" );
+                       "amt::get(S&&) : type is not inside the variant set" );
         return std::get< type >( storage.base() );
     }
 
@@ -75,7 +71,8 @@ namespace amt {
 
     template< typename T, traits::BoundedTypeStorage S >
     constexpr auto is( S&& s ) noexcept -> bool {
-        using stored_type = typename std::decay_t<S>::template storage_type<T>;
+        using stored_type =
+            typename std::decay_t< S >::template storage_type< T >;
         return std::holds_alternative< stored_type >( s.base() );
     }
 
@@ -125,7 +122,7 @@ namespace amt {
         } );
     }
 
-    template< typename List, typename FnType >
+    template< traits::VisitorList List, typename FnType >
     constexpr auto binary_op( traits::UnboundedTypeStorage auto&& LHS,
                               traits::UnboundedTypeStorage auto&& RHS,
                               FnType&& fn, List ) noexcept -> void {
@@ -146,12 +143,36 @@ namespace amt {
             List {} );
     }
 
+    template< typename FnType, traits::BoundedTypeStorage LHS,
+              traits::BoundedTypeStorage RHS >
+    constexpr auto binary_op( LHS&& lhs, RHS&& rhs, FnType&& fn,
+                              tag::dummy ) noexcept -> void {
+        binary_op( std::forward< LHS >( lhs ), std::forward< RHS >( rhs ),
+                   std::forward< FnType >( fn ) );
+    }
+
     template< typename... Ts, traits::UnboundedTypeStorage LHS,
               traits::UnboundedTypeStorage RHS, typename FnType >
     constexpr auto binary_op( LHS&& lhs, RHS&& rhs, FnType&& fn ) noexcept
         -> void {
         binary_op( std::forward< LHS >( lhs ), std::forward< RHS >( rhs ),
                    std::forward< FnType >( fn ), visitor_list< Ts... > {} );
+    }
+
+    template< typename... Ts, traits::DataFrame LHS, traits::DataFrame RHS,
+              typename FnType >
+    constexpr auto binary_op( LHS&& lhs, RHS&& rhs, FnType&& fn ) noexcept
+        -> void {
+        binary_op( lhs.base(), rhs.base(), std::forward< FnType >( fn ),
+                   visitor_list< Ts... > {} );
+    }
+
+    template< typename TypeList, traits::DataFrame LHS, traits::DataFrame RHS,
+              typename FnType >
+    constexpr auto binary_op( LHS&& lhs, RHS&& rhs, FnType&& fn,
+                              TypeList ) noexcept -> void {
+        binary_op( lhs.base(), rhs.base(), std::forward< FnType >( fn ),
+                   TypeList {} );
     }
 
 } // namespace amt
