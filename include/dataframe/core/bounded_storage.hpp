@@ -1,6 +1,7 @@
 #if !defined( AMT_DATAFRAME_CORE_BOUNDED_STORAGE_HPP )
 #define AMT_DATAFRAME_CORE_BOUNDED_STORAGE_HPP
 
+#include <dataframe/core/bounded_storage_helper.hpp>
 #include <dataframe/core/iterator_wrapper.hpp>
 #include <dataframe/core/traits/bounded.hpp>
 #include <dataframe/core/traits/operator.hpp>
@@ -118,8 +119,8 @@ namespace amt {
         }
 
         constexpr auto size() const noexcept -> size_type {
-            size_type sz{};
-            visit( *this, [&sz]( auto&& cont ) { sz = cont.size(); } );
+            size_type sz {};
+            visit( *this, [ &sz ]( auto&& cont ) { sz = cont.size(); } );
             return sz;
         }
 
@@ -149,6 +150,8 @@ namespace amt {
         }
 
         constexpr size_type index() const noexcept { return m_data.index(); }
+
+        constexpr auto type_index() noexcept { return impl::type_index_from_variant_index<type_list,0>(index()); }
 
     private:
         base_type m_data {};

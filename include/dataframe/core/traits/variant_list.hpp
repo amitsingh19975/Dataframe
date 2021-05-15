@@ -2,11 +2,13 @@
 #define AMT_DATAFRAME_CORE_TRAITS_VARAINT_LIST_HPP
 
 #include <type_traits>
+#include <tuple>
 
 namespace amt {
 
     template< typename... Ts >
     struct visitor_list {
+        using type = std::tuple<Ts...>;
         constexpr static auto size = sizeof...( Ts );
     };
 
@@ -60,6 +62,9 @@ namespace amt {
         concept VisitorList = impl::is_visitor_list_v<List>;
 
     } // namespace traits
+
+    template<std::size_t I, traits::VisitorList List>
+    using variant_list_element_t = std::tuple_element_t<I, typename List::type>;
 
 } // namespace amt
 
