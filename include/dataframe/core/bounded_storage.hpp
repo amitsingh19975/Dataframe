@@ -118,7 +118,9 @@ namespace amt {
         }
 
         constexpr auto size() const noexcept -> size_type {
-            return visit( *this, []( auto&& cont ) { return cont.size(); } );
+            size_type sz{};
+            visit( *this, [&sz]( auto&& cont ) { sz = cont.size(); } );
+            return sz;
         }
 
         constexpr auto
